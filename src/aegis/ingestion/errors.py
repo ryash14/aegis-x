@@ -5,6 +5,7 @@ from enum import StrEnum
 
 class ErrorCode(StrEnum):
     SOURCE_UNREADABLE = "source_unreadable"
+    INVALID_DOCX = "invalid_docx"
     INVALID_PDF = "invalid_pdf"
     ENCRYPTED_PDF = "encrypted_pdf"
     LIMIT_EXCEEDED = "limit_exceeded"

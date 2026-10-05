@@ -107,7 +107,7 @@ Input must start with a PDF header; filename extensions do not determine format.
 - Text uses PyMuPDF's sorted extraction; complex columns, tables, and equations
   do not have guaranteed reading order or preserved structure.
 - Optional layout blocks, conservative normalization, and resumable PDF batch
-  ingestion are available. No OCR, DOCX, chunking, or retrieval yet.
+  ingestion are available. DOCX structure extraction is available separately. No OCR, chunking, or retrieval yet.
 - Default limits are 100 MiB and 2,000 pages. File size and page limits do not
   bound decompression cost, extracted-text size, CPU time, or native parser memory.
   Parsing runs in-process; hostile-input process isolation is not implemented.
@@ -138,3 +138,30 @@ Run again to reuse unchanged successful records. Known failures remain visible;
 use `--retry-failed` to reattempt them. See [batch behavior](docs/batch-ingestion.md)
 and [saved batch reports](docs/batches.html). The corpus includes five intentionally
 unsupported scan/encryption cases, so this command returns exit code 1.
+
+### DOCX inspection
+
+Open [the DOCX workspace](docs/docx.html) to explore six local fixtures: tables,
+images, equations, and headers/footers. Choose a document and expand source positions.
+Rebuild a saved snapshot with `uv run python scripts/build_docx_demo.py`.
+To inspect your own file: `uv run python scripts/build_docx_demo.py /path/to/document.docx`,
+then refresh the workspace.
+
+```python
+from aegis.ingestion import ingest_docx
+
+document = ingest_docx("data/test-corpus/docling/docx/word_tables.docx")
+print(document.document_id, document.blocks[0])
+```
+
+DOCX extraction reads ZIP/XML locally without new dependencies. Paragraphs and
+recursive tables retain body order, inherited outline levels, cell merge markers,
+image relationship IDs, and zero-based XML child positions. Embedded images receive
+SHA-256 identities; external references are never fetched. Input bytes, expanded
+archive bytes, and member counts have configurable limits.
+
+This is structural extraction, not Word rendering: no page numbers, image OCR,
+list numbering reconstruction, equation layout, or header/footer extraction.
+Equation tokens and inserted tracked text are retained; deleted text is excluded.
+Merged cells retain markers rather than reconstructing a visual grid. PDF batch
+jobs remain PDF-only; DOCX uses `ingest_docx` and the separate snapshot builder.

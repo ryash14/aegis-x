@@ -1,5 +1,6 @@
 """Local PDF ingestion and its public result/error contracts."""
 
+from .docx import DocxBlock, DocxImage, DocxLimits, ExtractedDocx, ingest_docx
 from .errors import ErrorCode, IngestionError
 from .layout_models import LayoutConfig, PageLayout, TextBlock, TextLine, TextSpan
 from .models import (
@@ -14,6 +15,11 @@ from .normalization_models import NormalizationConfig, NormalizedPage, SourceSli
 from .pdf import ingest_pdf
 
 __all__ = [
+    "DocxBlock",
+    "DocxImage",
+    "DocxLimits",
+    "ExtractedDocx",
+    "ingest_docx",
     "DocumentMetadata",
     "ErrorCode",
     "ExtractedDocument",
