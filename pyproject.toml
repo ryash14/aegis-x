@@ -4,7 +4,9 @@ version = "0.1.0"
 description = "Local-first intelligence and research system for sensitive technical knowledge"
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
-dependencies = []
+dependencies = [
+    "pymupdf>=1.28.2",
+]
 
 [build-system]
 requires = ["uv_build>=0.12.23,<0.13.0"]
