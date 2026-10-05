@@ -106,8 +106,8 @@ Input must start with a PDF header; filename extensions do not determine format.
 
 - Text uses PyMuPDF's sorted extraction; complex columns, tables, and equations
   do not have guaranteed reading order or preserved structure.
-- Optional layout blocks and conservative normalization are available. No OCR,
-  DOCX, chunking, production storage/CLI, or retrieval yet.
+- Optional layout blocks, conservative normalization, and resumable PDF batch
+  ingestion are available. No OCR, DOCX, chunking, or retrieval yet.
 - Default limits are 100 MiB and 2,000 pages. File size and page limits do not
   bound decompression cost, extracted-text size, CPU time, or native parser memory.
   Parsing runs in-process; hostile-input process isolation is not implemented.
@@ -127,3 +127,14 @@ are required by the corpus helpers.
 Open [the experiment workspace](docs/experiments.html) to compare source pages,
 baseline text, and ordered text blocks. See [experiment usage](docs/experiments.md)
 to add local PDFs or inspect earlier saved runs.
+
+## Batch ingestion
+
+```bash
+uv run --locked python -m aegis.ingestion data/test-corpus --workers 2
+```
+
+Run again to reuse unchanged successful records. Known failures remain visible;
+use `--retry-failed` to reattempt them. See [batch behavior](docs/batch-ingestion.md)
+and [saved batch reports](docs/batches.html). The corpus includes five intentionally
+unsupported scan/encryption cases, so this command returns exit code 1.

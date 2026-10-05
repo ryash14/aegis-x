@@ -713,17 +713,13 @@
       <header>
         <div class="eyebrow">Build with evidence</div>
         <h1>Development roadmap.</h1>
-        <p class="intro">
-          A practical view of what exists, what comes next, and the work
-          remaining. Complete document intelligence before moving into
-          retrieval.
-        </p>
+        <p class="intro">Current progress and next checkpoints.</p>
       </header>
       <div class="stats" aria-label="Current project status">
         <div class="stat">
           <div class="stat-label">Current phase</div>
           <div class="stat-value">01 · Document intelligence</div>
-          <div class="stat-sub">PDF + normalization verified · phase still open</div>
+          <div class="stat-sub">PDF + batches verified · phase still open</div>
         </div>
         <div class="stat">
           <div class="stat-label">Local experimental corpus</div>
@@ -740,17 +736,15 @@
         <div class="next-icon" aria-hidden="true">↗</div>
         <div>
           <div class="eyebrow">Next checkpoint</div>
-          <strong>Persist and resume batch ingestion</strong>
-          <p>
-            NASA handbook page 11 exposes mixed columns and misplaced drop-cap
-            text. Compare source pages with extraction in a minimal local visual
-            demo.
-          </p>
+          <strong>Add structured DOCX ingestion</strong>
+          <p>Extract paragraphs, headings and tables with source positions.</p>
         </div>
       </div>
       <section aria-label="Phase roadmap">
-        <div class="section-label">
+        <div class="section-label" style="flex-wrap: wrap; gap: 12px">
           <h2>Phases & checkpoints</h2>
+          <a href="experiments.html">Text experiments ↗</a>
+          <a href="batches.html">Batch runs ↗</a>
           <button class="text-button" id="expand" type="button">
             Expand all
           </button>
@@ -828,7 +822,7 @@
           title: "Production document intelligence pipeline",
           status: "current",
           summary:
-            "PDF layout and normalization verified. Batching, OCR, DOCX, and chunking remain.",
+            "PDF extraction, normalization and resumable batches verified. DOCX, OCR and chunking remain.",
           description:
             "Turn local documents into inspectable structured records with traceable source locations. Complete this phase before adding retrieval.",
           tasks: [
@@ -864,12 +858,12 @@
             ],
             [
               "Persistent records and resumable batch ingestion",
-              "next",
+              "done",
               "Versioned output, bounded workers, unchanged-document reuse, failure isolation, and explicit retries.",
             ],
             [
               "DOCX ingestion",
-              "planned",
+              "next",
               "Paragraphs, headings, tables, embedded-image references, and source positions.",
             ],
             [
@@ -893,8 +887,10 @@
               "Explain interfaces and limitations; verify visually and commit each completed logical unit.",
             ],
           ],
-          gate: "Open. PDF, corpus, layout and experiment foundation committed. Finish Phase 1 before retrieval.",
+          gate: "Open. PDF, corpus, layout and experiment foundation committed. DOCX, OCR, chunking and phase validation remain before retrieval.",
           links: [
+            ["Text experiments", "experiments.html"],
+            ["Batch runs", "batches.html"],
             ["Corpus guide", "test-corpus.md"],
             [
               "NASA source PDF",
