@@ -1,0 +1,505 @@
+{
+  "schema_version": 1,
+  "files": [
+    {
+      "path": "docling/pdf/2203.01017v2.pdf",
+      "url": "https://raw.githubusercontent.com/docling-project/docling/b38ed495f016e5cbd90cb888d5d4b35b89fdec01/tests/data/pdf/sources/2203.01017v2.pdf",
+      "source": "Docling test fixtures",
+      "tags": [
+        "research",
+        "multi_column",
+        "figures"
+      ],
+      "git_blob_sha1": "f35eecd129e6eb790ed38f07b7bc1b9eb5e55da7",
+      "upstream_revision": "b38ed495f016e5cbd90cb888d5d4b35b89fdec01",
+      "rights": "See upstream LICENSE and individual document credits; fixture inclusion does not establish redistribution rights."
+    },
+    {
+      "path": "docling/pdf/2206.01062.pdf",
+      "url": "https://raw.githubusercontent.com/docling-project/docling/b38ed495f016e5cbd90cb888d5d4b35b89fdec01/tests/data/pdf/sources/2206.01062.pdf",
+      "source": "Docling test fixtures",
+      "tags": [
+        "research",
+        "tables",
+        "figures"
+      ],
+      "git_blob_sha1": "3d499d6450362438c5f00030127efd77daab03f3",
+      "upstream_revision": "b38ed495f016e5cbd90cb888d5d4b35b89fdec01",
+      "rights": "See upstream LICENSE and individual document credits; fixture inclusion does not establish redistribution rights."
+    },
+    {
+      "path": "docling/pdf/code_and_formula.pdf",
+      "url": "https://raw.githubusercontent.com/docling-project/docling/b38ed495f016e5cbd90cb888d5d4b35b89fdec01/tests/data/pdf/sources/code_and_formula.pdf",
+      "source": "Docling test fixtures",
+      "tags": [
+        "code",
+        "equations"
+      ],
+      "git_blob_sha1": "ecb5f7586d8c34241c572043d54a61dc8df8cbb9",
+      "upstream_revision": "b38ed495f016e5cbd90cb888d5d4b35b89fdec01",
+      "rights": "See upstream LICENSE and individual document credits; fixture inclusion does not establish redistribution rights."
+    },
+    {
+      "path": "docling/pdf/amt_handbook_sample.pdf",
+      "url": "https://raw.githubusercontent.com/docling-project/docling/b38ed495f016e5cbd90cb888d5d4b35b89fdec01/tests/data/pdf/sources/amt_handbook_sample.pdf",
+      "source": "Docling test fixtures",
+      "tags": [
+        "technical_manual",
+        "diagrams"
+      ],
+      "git_blob_sha1": "058513a34455f154661a9dd261986f6651050148",
+      "upstream_revision": "b38ed495f016e5cbd90cb888d5d4b35b89fdec01",
+      "rights": "See upstream LICENSE and individual document credits; fixture inclusion does not establish redistribution rights."
+    },
+    {
+      "path": "docling/pdf/newspaper-00.pdf",
+      "url": "https://raw.githubusercontent.com/docling-project/docling/b38ed495f016e5cbd90cb888d5d4b35b89fdec01/tests/data/pdf/sources/newspaper-00.pdf",
+      "source": "Docling test fixtures",
+      "tags": [
+        "complex_columns"
+      ],
+      "git_blob_sha1": "47238a52aa2f2a8a2c39f7bb84a3b608402857ea",
+      "upstream_revision": "b38ed495f016e5cbd90cb888d5d4b35b89fdec01",
+      "rights": "See upstream LICENSE and individual document credits; fixture inclusion does not establish redistribution rights."
+    },
+    {
+      "path": "docling/pdf/right_to_left_01.pdf",
+      "url": "https://raw.githubusercontent.com/docling-project/docling/b38ed495f016e5cbd90cb888d5d4b35b89fdec01/tests/data/pdf/sources/right_to_left_01.pdf",
+      "source": "Docling test fixtures",
+      "tags": [
+        "right_to_left"
+      ],
+      "git_blob_sha1": "2d9bc2f6edc9a0670fb51628eede378658a6f3a2",
+      "upstream_revision": "b38ed495f016e5cbd90cb888d5d4b35b89fdec01",
+      "rights": "See upstream LICENSE and individual document credits; fixture inclusion does not establish redistribution rights."
+    },
+    {
+      "path": "docling/pdf/table_misidentified_as_form.pdf",
+      "url": "https://raw.githubusercontent.com/docling-project/docling/b38ed495f016e5cbd90cb888d5d4b35b89fdec01/tests/data/pdf/sources/table_misidentified_as_form.pdf",
+      "source": "Docling test fixtures",
+      "tags": [
+        "tables",
+        "layout_edge_case"
+      ],
+      "git_blob_sha1": "db202f303d11e0dfbe146b6aa46d19ea39f37df3",
+      "upstream_revision": "b38ed495f016e5cbd90cb888d5d4b35b89fdec01",
+      "rights": "See upstream LICENSE and individual document credits; fixture inclusion does not establish redistribution rights."
+    },
+    {
+      "path": "docling/pdf/table_mislabeled_as_picture.pdf",
+      "url": "https://raw.githubusercontent.com/docling-project/docling/b38ed495f016e5cbd90cb888d5d4b35b89fdec01/tests/data/pdf/sources/table_mislabeled_as_picture.pdf",
+      "source": "Docling test fixtures",
+      "tags": [
+        "tables",
+        "layout_edge_case"
+      ],
+      "git_blob_sha1": "5cd07f5c4364560e95e69461996bc07ae0cc5799",
+      "upstream_revision": "b38ed495f016e5cbd90cb888d5d4b35b89fdec01",
+      "rights": "See upstream LICENSE and individual document credits; fixture inclusion does not establish redistribution rights."
+    },
+    {
+      "path": "docling/pdf/invisible_text_layer.pdf",
+      "url": "https://raw.githubusercontent.com/docling-project/docling/b38ed495f016e5cbd90cb888d5d4b35b89fdec01/tests/data/pdf/invisible_text_layer.pdf",
+      "source": "Docling test fixtures",
+      "tags": [
+        "invisible_text"
+      ],
+      "git_blob_sha1": "9fa7c0626083bbed6321ff7b93b2117e4e1f7d86",
+      "upstream_revision": "b38ed495f016e5cbd90cb888d5d4b35b89fdec01",
+      "rights": "See upstream LICENSE and individual document credits; fixture inclusion does not establish redistribution rights."
+    },
+    {
+      "path": "docling/ocr/ocr_test.pdf",
+      "url": "https://raw.githubusercontent.com/docling-project/docling/b38ed495f016e5cbd90cb888d5d4b35b89fdec01/tests/data/ocr/sources/ocr_test.pdf",
+      "source": "Docling test fixtures",
+      "tags": [
+        "image_only",
+        "ocr"
+      ],
+      "git_blob_sha1": "b79f3c2824285bb0926637ad3523a37b1e2d50f0",
+      "upstream_revision": "b38ed495f016e5cbd90cb888d5d4b35b89fdec01",
+      "rights": "See upstream LICENSE and individual document credits; fixture inclusion does not establish redistribution rights."
+    },
+    {
+      "path": "docling/ocr/ocr_test_rotated_90.pdf",
+      "url": "https://raw.githubusercontent.com/docling-project/docling/b38ed495f016e5cbd90cb888d5d4b35b89fdec01/tests/data/ocr/sources/ocr_test_rotated_90.pdf",
+      "source": "Docling test fixtures",
+      "tags": [
+        "rotated",
+        "ocr"
+      ],
+      "git_blob_sha1": "bd08daae6f09b30b019514f6cf8ab1c1e58de6e5",
+      "upstream_revision": "b38ed495f016e5cbd90cb888d5d4b35b89fdec01",
+      "rights": "See upstream LICENSE and individual document credits; fixture inclusion does not establish redistribution rights."
+    },
+    {
+      "path": "docling/ocr/ocr_test_rotated_180.pdf",
+      "url": "https://raw.githubusercontent.com/docling-project/docling/b38ed495f016e5cbd90cb888d5d4b35b89fdec01/tests/data/ocr/sources/ocr_test_rotated_180.pdf",
+      "source": "Docling test fixtures",
+      "tags": [
+        "rotated",
+        "ocr"
+      ],
+      "git_blob_sha1": "1c030b4944ea036e4fbd5c76c10cca5ba50b1a98",
+      "upstream_revision": "b38ed495f016e5cbd90cb888d5d4b35b89fdec01",
+      "rights": "See upstream LICENSE and individual document credits; fixture inclusion does not establish redistribution rights."
+    },
+    {
+      "path": "docling/ocr/sample_with_rotation_mismatch.pdf",
+      "url": "https://raw.githubusercontent.com/docling-project/docling/b38ed495f016e5cbd90cb888d5d4b35b89fdec01/tests/data/ocr/sources/sample_with_rotation_mismatch.pdf",
+      "source": "Docling test fixtures",
+      "tags": [
+        "rotation_mismatch",
+        "ocr"
+      ],
+      "git_blob_sha1": "be70e48b6cbd2465ef25b669cc30c1f04433dfef",
+      "upstream_revision": "b38ed495f016e5cbd90cb888d5d4b35b89fdec01",
+      "rights": "See upstream LICENSE and individual document credits; fixture inclusion does not establish redistribution rights."
+    },
+    {
+      "path": "docling/pdf_password/2206.01062_pg3.pdf",
+      "url": "https://raw.githubusercontent.com/docling-project/docling/b38ed495f016e5cbd90cb888d5d4b35b89fdec01/tests/data/pdf_password/sources/2206.01062_pg3.pdf",
+      "source": "Docling test fixtures",
+      "tags": [
+        "encrypted",
+        "expected_failure"
+      ],
+      "git_blob_sha1": "c648b2b33a31569648e5060286271888bcf7488f",
+      "upstream_revision": "b38ed495f016e5cbd90cb888d5d4b35b89fdec01",
+      "rights": "See upstream LICENSE and individual document credits; fixture inclusion does not establish redistribution rights."
+    },
+    {
+      "path": "docling/docx/word_sample.docx",
+      "url": "https://raw.githubusercontent.com/docling-project/docling/b38ed495f016e5cbd90cb888d5d4b35b89fdec01/tests/data/docx/sources/word_sample.docx",
+      "source": "Docling test fixtures",
+      "tags": [
+        "mixed_content"
+      ],
+      "git_blob_sha1": "69b09f5a3a72c6a7bbfe016ff71465f3ca66109c",
+      "upstream_revision": "b38ed495f016e5cbd90cb888d5d4b35b89fdec01",
+      "rights": "See upstream LICENSE and individual document credits; fixture inclusion does not establish redistribution rights."
+    },
+    {
+      "path": "docling/docx/word_tables.docx",
+      "url": "https://raw.githubusercontent.com/docling-project/docling/b38ed495f016e5cbd90cb888d5d4b35b89fdec01/tests/data/docx/sources/word_tables.docx",
+      "source": "Docling test fixtures",
+      "tags": [
+        "tables"
+      ],
+      "git_blob_sha1": "d22a20dfd5ff38a2bb7f547688587761b5f61974",
+      "upstream_revision": "b38ed495f016e5cbd90cb888d5d4b35b89fdec01",
+      "rights": "See upstream LICENSE and individual document credits; fixture inclusion does not establish redistribution rights."
+    },
+    {
+      "path": "docling/docx/docx_rich_tables_01.docx",
+      "url": "https://raw.githubusercontent.com/docling-project/docling/b38ed495f016e5cbd90cb888d5d4b35b89fdec01/tests/data/docx/sources/docx_rich_tables_01.docx",
+      "source": "Docling test fixtures",
+      "tags": [
+        "rich_tables"
+      ],
+      "git_blob_sha1": "641eba1de282f333d722e448af3923ab5daa069a",
+      "upstream_revision": "b38ed495f016e5cbd90cb888d5d4b35b89fdec01",
+      "rights": "See upstream LICENSE and individual document credits; fixture inclusion does not establish redistribution rights."
+    },
+    {
+      "path": "docling/docx/equations.docx",
+      "url": "https://raw.githubusercontent.com/docling-project/docling/b38ed495f016e5cbd90cb888d5d4b35b89fdec01/tests/data/docx/sources/equations.docx",
+      "source": "Docling test fixtures",
+      "tags": [
+        "equations"
+      ],
+      "git_blob_sha1": "5f14b4448c95420e0bfb8821c5cc49e2ee32bf59",
+      "upstream_revision": "b38ed495f016e5cbd90cb888d5d4b35b89fdec01",
+      "rights": "See upstream LICENSE and individual document credits; fixture inclusion does not establish redistribution rights."
+    },
+    {
+      "path": "docling/docx/docx_grouped_images.docx",
+      "url": "https://raw.githubusercontent.com/docling-project/docling/b38ed495f016e5cbd90cb888d5d4b35b89fdec01/tests/data/docx/sources/docx_grouped_images.docx",
+      "source": "Docling test fixtures",
+      "tags": [
+        "grouped_images"
+      ],
+      "git_blob_sha1": "9ae009cb66a6c82b4153d3596167c157ebec1ad5",
+      "upstream_revision": "b38ed495f016e5cbd90cb888d5d4b35b89fdec01",
+      "rights": "See upstream LICENSE and individual document credits; fixture inclusion does not establish redistribution rights."
+    },
+    {
+      "path": "docling/docx/docx_page_header_footer_first_page.docx",
+      "url": "https://raw.githubusercontent.com/docling-project/docling/b38ed495f016e5cbd90cb888d5d4b35b89fdec01/tests/data/docx/sources/docx_page_header_footer_first_page.docx",
+      "source": "Docling test fixtures",
+      "tags": [
+        "headers",
+        "footers"
+      ],
+      "git_blob_sha1": "97ad287d7765d0758daface2ca5bb236f2c4f7e4",
+      "upstream_revision": "b38ed495f016e5cbd90cb888d5d4b35b89fdec01",
+      "rights": "See upstream LICENSE and individual document credits; fixture inclusion does not establish redistribution rights."
+    },
+    {
+      "path": "docling/pptx/powerpoint_sample.pptx",
+      "url": "https://raw.githubusercontent.com/docling-project/docling/b38ed495f016e5cbd90cb888d5d4b35b89fdec01/tests/data/pptx/sources/powerpoint_sample.pptx",
+      "source": "Docling test fixtures",
+      "tags": [
+        "slides"
+      ],
+      "git_blob_sha1": "0818f283bed6ee82d09ceb98f07da9fe3f01cbb2",
+      "upstream_revision": "b38ed495f016e5cbd90cb888d5d4b35b89fdec01",
+      "rights": "See upstream LICENSE and individual document credits; fixture inclusion does not establish redistribution rights."
+    },
+    {
+      "path": "docling/pptx/powerpoint_with_image.pptx",
+      "url": "https://raw.githubusercontent.com/docling-project/docling/b38ed495f016e5cbd90cb888d5d4b35b89fdec01/tests/data/pptx/sources/powerpoint_with_image.pptx",
+      "source": "Docling test fixtures",
+      "tags": [
+        "images",
+        "slides"
+      ],
+      "git_blob_sha1": "206ed96b07de3305e95999c9af7eae11feff7164",
+      "upstream_revision": "b38ed495f016e5cbd90cb888d5d4b35b89fdec01",
+      "rights": "See upstream LICENSE and individual document credits; fixture inclusion does not establish redistribution rights."
+    },
+    {
+      "path": "docling/pptx/pptx_chart.pptx",
+      "url": "https://raw.githubusercontent.com/docling-project/docling/b38ed495f016e5cbd90cb888d5d4b35b89fdec01/tests/data/pptx/sources/pptx_chart.pptx",
+      "source": "Docling test fixtures",
+      "tags": [
+        "chart",
+        "slides"
+      ],
+      "git_blob_sha1": "08ea13cafed72ab831867cc29b43295a15793299",
+      "upstream_revision": "b38ed495f016e5cbd90cb888d5d4b35b89fdec01",
+      "rights": "See upstream LICENSE and individual document credits; fixture inclusion does not establish redistribution rights."
+    },
+    {
+      "path": "docling/xlsx/xlsx_01.xlsx",
+      "url": "https://raw.githubusercontent.com/docling-project/docling/b38ed495f016e5cbd90cb888d5d4b35b89fdec01/tests/data/xlsx/sources/xlsx_01.xlsx",
+      "source": "Docling test fixtures",
+      "tags": [
+        "spreadsheet"
+      ],
+      "git_blob_sha1": "5ce87531af84f82add366b8d05bee59d3df413fe",
+      "upstream_revision": "b38ed495f016e5cbd90cb888d5d4b35b89fdec01",
+      "rights": "See upstream LICENSE and individual document credits; fixture inclusion does not establish redistribution rights."
+    },
+    {
+      "path": "docling/xlsx/xlsx_03_chartsheet.xlsx",
+      "url": "https://raw.githubusercontent.com/docling-project/docling/b38ed495f016e5cbd90cb888d5d4b35b89fdec01/tests/data/xlsx/sources/xlsx_03_chartsheet.xlsx",
+      "source": "Docling test fixtures",
+      "tags": [
+        "charts"
+      ],
+      "git_blob_sha1": "fab687878be961d1ef7c8bf8e7befbcbff9430c3",
+      "upstream_revision": "b38ed495f016e5cbd90cb888d5d4b35b89fdec01",
+      "rights": "See upstream LICENSE and individual document credits; fixture inclusion does not establish redistribution rights."
+    },
+    {
+      "path": "docling/xlsx/xlsx_06_edge_cases_.xlsx",
+      "url": "https://raw.githubusercontent.com/docling-project/docling/b38ed495f016e5cbd90cb888d5d4b35b89fdec01/tests/data/xlsx/sources/xlsx_06_edge_cases_.xlsx",
+      "source": "Docling test fixtures",
+      "tags": [
+        "spreadsheet_edge_cases"
+      ],
+      "git_blob_sha1": "f18c70bbf8c2a377e9caf67288bf2c0be4bfb114",
+      "upstream_revision": "b38ed495f016e5cbd90cb888d5d4b35b89fdec01",
+      "rights": "See upstream LICENSE and individual document credits; fixture inclusion does not establish redistribution rights."
+    },
+    {
+      "path": "docling/csv/csv-comma.csv",
+      "url": "https://raw.githubusercontent.com/docling-project/docling/b38ed495f016e5cbd90cb888d5d4b35b89fdec01/tests/data/csv/sources/csv-comma.csv",
+      "source": "Docling test fixtures",
+      "tags": [
+        "tabular"
+      ],
+      "git_blob_sha1": "bcdcc2039eef9e28468d2b23515caccfb0763157",
+      "upstream_revision": "b38ed495f016e5cbd90cb888d5d4b35b89fdec01",
+      "rights": "See upstream LICENSE and individual document credits; fixture inclusion does not establish redistribution rights."
+    },
+    {
+      "path": "docling/csv/csv-comma-in-cell.csv",
+      "url": "https://raw.githubusercontent.com/docling-project/docling/b38ed495f016e5cbd90cb888d5d4b35b89fdec01/tests/data/csv/sources/csv-comma-in-cell.csv",
+      "source": "Docling test fixtures",
+      "tags": [
+        "quoted_delimiter"
+      ],
+      "git_blob_sha1": "3c9feb4888cb4daf0b54cf43d20e38857adcc721",
+      "upstream_revision": "b38ed495f016e5cbd90cb888d5d4b35b89fdec01",
+      "rights": "See upstream LICENSE and individual document credits; fixture inclusion does not establish redistribution rights."
+    },
+    {
+      "path": "docling/csv/csv-inconsistent-header.csv",
+      "url": "https://raw.githubusercontent.com/docling-project/docling/b38ed495f016e5cbd90cb888d5d4b35b89fdec01/tests/data/csv/sources/csv-inconsistent-header.csv",
+      "source": "Docling test fixtures",
+      "tags": [
+        "malformed_table"
+      ],
+      "git_blob_sha1": "e7b73a7257ac7fec40c2cd603900733069f05bf5",
+      "upstream_revision": "b38ed495f016e5cbd90cb888d5d4b35b89fdec01",
+      "rights": "See upstream LICENSE and individual document credits; fixture inclusion does not establish redistribution rights."
+    },
+    {
+      "path": "docling/html/html_rich_table_cells.html",
+      "url": "https://raw.githubusercontent.com/docling-project/docling/b38ed495f016e5cbd90cb888d5d4b35b89fdec01/tests/data/html/sources/html_rich_table_cells.html",
+      "source": "Docling test fixtures",
+      "tags": [
+        "rich_tables"
+      ],
+      "git_blob_sha1": "9670c4bcf790be443e92670f4036a5e5954cde31",
+      "upstream_revision": "b38ed495f016e5cbd90cb888d5d4b35b89fdec01",
+      "rights": "See upstream LICENSE and individual document credits; fixture inclusion does not establish redistribution rights."
+    },
+    {
+      "path": "docling/html/html_code_snippets.html",
+      "url": "https://raw.githubusercontent.com/docling-project/docling/b38ed495f016e5cbd90cb888d5d4b35b89fdec01/tests/data/html/sources/html_code_snippets.html",
+      "source": "Docling test fixtures",
+      "tags": [
+        "code"
+      ],
+      "git_blob_sha1": "3858171ee720df93b34bb86413dc464ca2efb322",
+      "upstream_revision": "b38ed495f016e5cbd90cb888d5d4b35b89fdec01",
+      "rights": "See upstream LICENSE and individual document credits; fixture inclusion does not establish redistribution rights."
+    },
+    {
+      "path": "docling/md/ending_with_table.md",
+      "url": "https://raw.githubusercontent.com/docling-project/docling/b38ed495f016e5cbd90cb888d5d4b35b89fdec01/tests/data/md/sources/ending_with_table.md",
+      "source": "Docling test fixtures",
+      "tags": [
+        "table"
+      ],
+      "git_blob_sha1": "6c491d6474f8411c322f8e90588c374d9a04b85e",
+      "upstream_revision": "b38ed495f016e5cbd90cb888d5d4b35b89fdec01",
+      "rights": "See upstream LICENSE and individual document credits; fixture inclusion does not establish redistribution rights."
+    },
+    {
+      "path": "docling/ocr/qr_bill_example.jpg",
+      "url": "https://raw.githubusercontent.com/docling-project/docling/b38ed495f016e5cbd90cb888d5d4b35b89fdec01/tests/data/ocr/sources/qr_bill_example.jpg",
+      "source": "Docling test fixtures",
+      "tags": [
+        "image",
+        "ocr",
+        "form"
+      ],
+      "git_blob_sha1": "a1c30b57cc05538a5f7de58d7a2d3d77a5f8fd23",
+      "upstream_revision": "b38ed495f016e5cbd90cb888d5d4b35b89fdec01",
+      "rights": "See upstream LICENSE and individual document credits; fixture inclusion does not establish redistribution rights."
+    },
+    {
+      "path": "docling/ocr/rotated_90_dense_text.png",
+      "url": "https://raw.githubusercontent.com/docling-project/docling/b38ed495f016e5cbd90cb888d5d4b35b89fdec01/tests/data/ocr/sources/rotated_90_dense_text.png",
+      "source": "Docling test fixtures",
+      "tags": [
+        "image",
+        "rotated",
+        "ocr"
+      ],
+      "git_blob_sha1": "a5a27166ea0edcfff8c44f584073e4a8e6598653",
+      "upstream_revision": "b38ed495f016e5cbd90cb888d5d4b35b89fdec01",
+      "rights": "See upstream LICENSE and individual document credits; fixture inclusion does not establish redistribution rights."
+    },
+    {
+      "path": "docling/webp/webp-test.webp",
+      "url": "https://raw.githubusercontent.com/docling-project/docling/b38ed495f016e5cbd90cb888d5d4b35b89fdec01/tests/data/webp/sources/webp-test.webp",
+      "source": "Docling test fixtures",
+      "tags": [
+        "image",
+        "ocr"
+      ],
+      "git_blob_sha1": "45bc1bcd8a20ad803dd2904fe4a677e490150704",
+      "upstream_revision": "b38ed495f016e5cbd90cb888d5d4b35b89fdec01",
+      "rights": "See upstream LICENSE and individual document credits; fixture inclusion does not establish redistribution rights."
+    },
+    {
+      "path": "docling/tiff/2206.01062.tif",
+      "url": "https://raw.githubusercontent.com/docling-project/docling/b38ed495f016e5cbd90cb888d5d4b35b89fdec01/tests/data/tiff/sources/2206.01062.tif",
+      "source": "Docling test fixtures",
+      "tags": [
+        "image",
+        "research"
+      ],
+      "git_blob_sha1": "bade736bf5508da48358dfeac0b54f8363097151",
+      "upstream_revision": "b38ed495f016e5cbd90cb888d5d4b35b89fdec01",
+      "rights": "See upstream LICENSE and individual document credits; fixture inclusion does not establish redistribution rights."
+    },
+    {
+      "path": "docling/odf/text_document_02.odt",
+      "url": "https://raw.githubusercontent.com/docling-project/docling/b38ed495f016e5cbd90cb888d5d4b35b89fdec01/tests/data/odf/sources/text_document_02.odt",
+      "source": "Docling test fixtures",
+      "tags": [
+        "open_document",
+        "images"
+      ],
+      "git_blob_sha1": "4d93a635934fecaf30653cf39dd66915bc0c690b",
+      "upstream_revision": "b38ed495f016e5cbd90cb888d5d4b35b89fdec01",
+      "rights": "See upstream LICENSE and individual document credits; fixture inclusion does not establish redistribution rights."
+    },
+    {
+      "path": "docling/odf/odf_table_with_title_01.ods",
+      "url": "https://raw.githubusercontent.com/docling-project/docling/b38ed495f016e5cbd90cb888d5d4b35b89fdec01/tests/data/odf/sources/odf_table_with_title_01.ods",
+      "source": "Docling test fixtures",
+      "tags": [
+        "open_document",
+        "spreadsheet"
+      ],
+      "git_blob_sha1": "23ef711868e7249e5ed21ce684752c49dca8c56a",
+      "upstream_revision": "b38ed495f016e5cbd90cb888d5d4b35b89fdec01",
+      "rights": "See upstream LICENSE and individual document credits; fixture inclusion does not establish redistribution rights."
+    },
+    {
+      "path": "docling/doc/legacy_sample.doc",
+      "url": "https://raw.githubusercontent.com/docling-project/docling/b38ed495f016e5cbd90cb888d5d4b35b89fdec01/tests/data/doc/sources/legacy_sample.doc",
+      "source": "Docling test fixtures",
+      "tags": [
+        "legacy_word"
+      ],
+      "git_blob_sha1": "0ad17d2e6148c13ab57aed21fce7a8b754877803",
+      "upstream_revision": "b38ed495f016e5cbd90cb888d5d4b35b89fdec01",
+      "rights": "See upstream LICENSE and individual document credits; fixture inclusion does not establish redistribution rights."
+    },
+    {
+      "path": "reports/nasa-systems-engineering-handbook.pdf",
+      "url": "https://www.nasa.gov/wp-content/uploads/2018/09/nasa_systems_engineering_handbook_0.pdf",
+      "source": "NASA Systems Engineering Handbook",
+      "tags": [
+        "long_report",
+        "technical",
+        "diagrams",
+        "tables"
+      ],
+      "rights": "Publicly hosted US government document; retain document-specific credits. No affiliation or endorsement implied."
+    },
+    {
+      "path": "reports/nist-ai-rmf.pdf",
+      "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+      "source": "NIST AI Risk Management Framework 1.0",
+      "tags": [
+        "technical",
+        "framework",
+        "figures"
+      ],
+      "rights": "Publicly hosted US government document; retain document-specific credits. No affiliation or endorsement implied."
+    },
+    {
+      "path": "reports/apollo-operations-handbook.pdf",
+      "url": "https://ntrs.nasa.gov/api/citations/19710071423/downloads/19710071423.pdf",
+      "source": "Apollo Operations Handbook",
+      "tags": [
+        "historical",
+        "technical_manual",
+        "scan_candidate",
+        "long_report"
+      ],
+      "rights": "Publicly hosted US government document; retain document-specific credits. No affiliation or endorsement implied."
+    },
+    {
+      "path": "reports/apollo-11-flight-plan.pdf",
+      "url": "https://www.archives.gov/files/historical-docs/doc-content/images/apollo-11-flight-plan.pdf",
+      "source": "Apollo 11 Flight Plan",
+      "tags": [
+        "historical",
+        "scan_candidate",
+        "long_report",
+        "schedules"
+      ],
+      "rights": "Publicly hosted US government document; retain document-specific credits. No affiliation or endorsement implied."
+    }
+  ]
+}
