@@ -1,0 +1,1406 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AEGIS-X · Development roadmap</title>
+    <style>
+      @font-face {
+        font-family: Inter;
+        src: url("assets/InterVariable.woff2") format("woff2");
+        font-weight: 100 900;
+        font-display: swap;
+      }
+
+      :root {
+        color-scheme: dark;
+        --bg: #151514;
+        --sidebar: #111110;
+        --panel: #1b1b19;
+        --hover: #242420;
+        --line: #30302c;
+        --text: #e9e8e2;
+        --muted: #9b9b92;
+        --soft: #c0c0b7;
+        --accent: #d5cbb2;
+        --green: #b0c9b4;
+        --amber: #dbc18d;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+        scroll-padding-top: 24px;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: Inter, system-ui, sans-serif;
+        font-size: 14px;
+        line-height: 1.65;
+      }
+
+      button,
+      input {
+        font: inherit;
+      }
+
+      button,
+      a,
+      input,
+      summary {
+        outline-offset: 4px;
+      }
+
+      a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+
+      a:hover {
+        text-decoration: underline;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      aside {
+        width: 244px;
+        background: var(--sidebar);
+        border-right: 1px solid var(--line);
+        position: fixed;
+        inset: 0 auto 0 0;
+        padding: 30px 20px;
+        overflow: auto;
+      }
+
+      .brand {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin: 0 10px 34px;
+      }
+
+      .mark {
+        display: grid;
+        place-items: center;
+        width: 34px;
+        height: 34px;
+        border: 1px solid #77776d;
+        border-radius: 9px;
+        color: var(--accent);
+        font-size: 17px;
+      }
+
+      .brand strong {
+        font-size: 15px;
+        letter-spacing: 0.06em;
+      }
+
+      .brand small {
+        display: block;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .nav-label,
+      .eyebrow {
+        text-transform: uppercase;
+        font-size: 10px;
+        letter-spacing: 0.15em;
+        font-weight: 600;
+        color: var(--muted);
+      }
+
+      .nav-label {
+        margin: 24px 11px 9px;
+      }
+
+      nav a {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 11px;
+        margin: 3px 0;
+        color: var(--soft);
+        font-size: 12px;
+        border-radius: 6px;
+      }
+
+      nav a:hover {
+        background: var(--hover);
+        text-decoration: none;
+      }
+
+      nav a.active {
+        background: #292923;
+        color: var(--text);
+      }
+
+      .nav-number {
+        color: var(--muted);
+        font-size: 11px;
+        width: 20px;
+      }
+
+      .nav-dot {
+        height: 5px;
+        width: 5px;
+        border-radius: 50%;
+        background: #77776d;
+        margin-left: auto;
+        flex-shrink: 0;
+      }
+
+      .nav-dot.done {
+        background: var(--green);
+      }
+
+      .nav-dot.current {
+        background: var(--accent);
+      }
+
+      .sidebar-note {
+        margin: 28px 11px 0;
+        padding-top: 18px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      main {
+        margin-left: 244px;
+        padding: 32px 54px 64px;
+        max-width: 1390px;
+      }
+
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 44px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .crumb span {
+        color: var(--soft);
+      }
+
+      .local {
+        display: flex;
+        gap: 7px;
+        align-items: center;
+      }
+
+      .local::before {
+        content: "";
+        width: 5px;
+        height: 5px;
+        background: var(--green);
+        border-radius: 50%;
+      }
+
+      .eyebrow {
+        color: var(--accent);
+      }
+
+      h1 {
+        font-size: 38px;
+        letter-spacing: -1.5px;
+        font-weight: 600;
+        line-height: 1.2;
+        margin: 12px 0 14px;
+      }
+
+      .intro {
+        max-width: 680px;
+        color: var(--muted);
+        font-size: 14px;
+        margin-bottom: 28px;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        margin-bottom: 26px;
+      }
+
+      .stat {
+        padding: 19px 22px;
+      }
+
+      .stat + .stat {
+        border-left: 1px solid var(--line);
+      }
+
+      .stat-label {
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .stat-value {
+        font-size: 21px;
+        font-weight: 500;
+        letter-spacing: -0.5px;
+        margin: 5px 0 0;
+      }
+
+      .stat-sub {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 3px;
+      }
+
+      .next {
+        display: flex;
+        align-items: flex-start;
+        gap: 15px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-left: 3px solid var(--accent);
+        border-radius: 7px;
+        padding: 20px 22px;
+        margin-bottom: 32px;
+      }
+
+      .next-icon {
+        color: var(--accent);
+        font-size: 20px;
+      }
+
+      .next strong {
+        font-size: 13px;
+        font-weight: 550;
+      }
+
+      .next p {
+        margin: 5px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .toolbar {
+        display: flex;
+        gap: 14px;
+        align-items: center;
+        justify-content: space-between;
+        margin: 20px 0;
+      }
+
+      .filters {
+        display: flex;
+        gap: 5px;
+      }
+
+      .filter,
+      .text-button {
+        border: 0;
+        background: none;
+        color: var(--muted);
+        font-size: 12px;
+        padding: 7px 11px;
+        border-radius: 5px;
+      }
+
+      .filter:hover,
+      .text-button:hover {
+        background: var(--hover);
+        color: var(--text);
+      }
+
+      .filter[aria-pressed="true"] {
+        background: #292923;
+        color: var(--text);
+      }
+
+      .search {
+        background: var(--sidebar);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 8px 12px;
+        color: var(--text);
+        width: 210px;
+        font-size: 12px;
+      }
+
+      .search::placeholder {
+        color: var(--muted);
+      }
+
+      .section-label {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .section-label h2 {
+        font-size: 14px;
+        font-weight: 550;
+        margin: 0;
+      }
+
+      .phase {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        margin: 10px 0;
+        background: transparent;
+        overflow: hidden;
+      }
+
+      .phase.current {
+        border-color: #585347;
+        background: #191917;
+      }
+
+      summary {
+        list-style: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 19px 22px;
+      }
+
+      summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .phase-number {
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--muted);
+        width: 28px;
+      }
+
+      .phase-title {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .phase-title strong {
+        font-size: 13px;
+        font-weight: 550;
+        display: block;
+      }
+
+      .phase-title small {
+        color: var(--muted);
+        display: block;
+        font-size: 11px;
+        margin-top: 2px;
+      }
+
+      .badge {
+        font-size: 10px;
+        padding: 3px 9px;
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        white-space: nowrap;
+        color: var(--muted);
+      }
+
+      .badge.complete {
+        color: var(--green);
+        border-color: #324a43;
+        background: #182823;
+      }
+
+      .badge.current {
+        color: var(--accent);
+        border-color: #585347;
+        background: #29271f;
+      }
+
+      .chevron {
+        color: var(--muted);
+        font-size: 14px;
+        transition: transform 0.15s;
+      }
+
+      .phase[open] .chevron {
+        transform: rotate(90deg);
+      }
+
+      .phase-body {
+        padding: 0 22px 22px 65px;
+      }
+
+      .description {
+        color: var(--muted);
+        font-size: 12px;
+        margin: 0 0 14px;
+        max-width: 700px;
+      }
+
+      .tasks {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        border-top: 1px solid var(--line);
+      }
+
+      .task {
+        display: flex;
+        gap: 11px;
+        align-items: flex-start;
+        padding: 12px 0;
+        border-bottom: 1px solid #292924;
+        font-size: 12px;
+      }
+
+      .task:last-child {
+        border-bottom: 0;
+      }
+
+      .task-marker {
+        height: 15px;
+        width: 15px;
+        flex-shrink: 0;
+        border: 1px solid #66665d;
+        border-radius: 4px;
+        margin-top: 3px;
+        display: grid;
+        place-items: center;
+        font-size: 10px;
+        color: var(--muted);
+      }
+
+      .task.done .task-marker {
+        background: #233b32;
+        border-color: #466957;
+        color: var(--green);
+      }
+
+      .task.next-task .task-marker {
+        color: var(--accent);
+        border-color: #97896a;
+      }
+
+      .task-content {
+        flex: 1;
+      }
+
+      .task-content small {
+        display: block;
+        color: var(--muted);
+        font-size: 11px;
+        margin-top: 2px;
+      }
+
+      .task-status {
+        color: var(--muted);
+        font-size: 10px;
+        padding-top: 3px;
+        white-space: nowrap;
+      }
+
+      .task.done .task-status {
+        color: var(--green);
+      }
+
+      .task.next-task .task-status {
+        color: var(--accent);
+      }
+
+      .gate {
+        margin-top: 16px;
+        padding: 12px 14px;
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      .gate strong {
+        color: var(--soft);
+        font-weight: 500;
+      }
+
+      .links {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-top: 15px;
+        font-size: 11px;
+      }
+
+      .empty {
+        color: var(--muted);
+        padding: 32px 0;
+        text-align: center;
+      }
+
+      footer {
+        border-top: 1px solid var(--line);
+        margin-top: 30px;
+        padding-top: 18px;
+        display: flex;
+        gap: 20px;
+        justify-content: space-between;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .legend {
+        display: flex;
+        gap: 14px;
+      }
+
+      .legend span {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+
+      .legend i {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: var(--green);
+      }
+
+      .legend span:nth-child(2) i {
+        background: var(--accent);
+      }
+
+      .legend span:nth-child(3) i {
+        background: #77776d;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      @media (min-width: 1500px) {
+        main {
+          margin-left: calc(244px + (100vw - 1390px) / 2);
+          max-width: 1146px;
+        }
+      }
+
+      @media (max-width: 1000px) {
+        aside {
+          width: 200px;
+          padding: 24px 12px;
+        }
+
+        main {
+          margin-left: 200px;
+          padding: 28px;
+        }
+
+        .toolbar {
+          flex-wrap: wrap;
+        }
+
+        .search {
+          width: 180px;
+        }
+      }
+
+      @media (max-width: 700px) {
+        aside {
+          display: none;
+        }
+
+        main {
+          margin: 0;
+          padding: 24px 18px;
+        }
+
+        .topbar {
+          margin-bottom: 30px;
+        }
+
+        h1 {
+          font-size: 32px;
+        }
+
+        .stats {
+          grid-template-columns: 1fr;
+        }
+
+        .stat + .stat {
+          border-left: 0;
+          border-top: 1px solid var(--line);
+        }
+
+        .stat {
+          padding: 12px 17px;
+        }
+
+        .phase-body {
+          padding-left: 22px;
+        }
+
+        summary {
+          padding: 16px 15px;
+          gap: 9px;
+        }
+
+        .phase-title strong {
+          font-size: 12px;
+        }
+
+        .toolbar {
+          gap: 9px;
+        }
+
+        .search {
+          width: 100%;
+        }
+
+        .filters {
+          flex-wrap: wrap;
+        }
+
+        footer {
+          flex-direction: column;
+          gap: 9px;
+        }
+
+        .task-status {
+          display: none;
+        }
+
+        .local {
+          font-size: 10px;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+
+        .chevron {
+          transition: none;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <aside aria-label="Roadmap navigation">
+      <div class="brand">
+        <span class="mark" aria-hidden="true">⌁</span>
+        <div><strong>AEGIS-X</strong><small>Engineering workspace</small></div>
+      </div>
+      <div class="nav-label">Development</div>
+      <nav id="navigation"></nav>
+      <div class="sidebar-note">
+        One phase at a time.<br />Implement → test → inspect<br />→ document →
+        commit.
+      </div>
+      <div class="sidebar-note">
+        Local files · No telemetry<br />No external font requests
+      </div>
+    </aside>
+    <main>
+      <div class="topbar">
+        <div class="crumb">AEGIS-X <span> / Development roadmap</span></div>
+        <div class="local">Local workspace</div>
+      </div>
+      <header>
+        <div class="eyebrow">Build with evidence</div>
+        <h1>Development roadmap.</h1>
+        <p class="intro">
+          A practical view of what exists, what comes next, and the work
+          remaining. Complete document intelligence before moving into
+          retrieval.
+        </p>
+      </header>
+      <div class="stats" aria-label="Current project status">
+        <div class="stat">
+          <div class="stat-label">Current phase</div>
+          <div class="stat-value">01 · Document intelligence</div>
+          <div class="stat-sub">PDF + layout verified · phase still open</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Local experimental corpus</div>
+          <div class="stat-value">43 documents · 14 formats</div>
+          <div class="stat-sub">1,301 PDF pages · 56.5 MiB</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Verified checkpoints</div>
+          <div class="stat-value" id="checkpoint-count"></div>
+          <div class="stat-sub">Checkpoint count, not an effort estimate</div>
+        </div>
+      </div>
+      <div class="next">
+        <div class="next-icon" aria-hidden="true">↗</div>
+        <div>
+          <div class="eyebrow">Next checkpoint</div>
+          <strong>Normalize text with traceability</strong>
+          <p>
+            NASA handbook page 11 exposes mixed columns and misplaced drop-cap
+            text. Compare source pages with extraction in a minimal local visual
+            demo.
+          </p>
+        </div>
+      </div>
+      <section aria-label="Phase roadmap">
+        <div class="section-label">
+          <h2>Phases & checkpoints</h2>
+          <button class="text-button" id="expand" type="button">
+            Expand all
+          </button>
+        </div>
+        <div class="toolbar">
+          <div class="filters" aria-label="Filter phases">
+            <button class="filter" data-filter="all" aria-pressed="true">
+              All phases</button
+            ><button class="filter" data-filter="current" aria-pressed="false">
+              Current</button
+            ><button class="filter" data-filter="complete" aria-pressed="false">
+              Complete</button
+            ><button class="filter" data-filter="planned" aria-pressed="false">
+              Upcoming
+            </button>
+          </div>
+          <input
+            class="search"
+            id="search"
+            type="search"
+            aria-label="Search phases and checkpoints"
+            placeholder="Search checkpoints…"
+          />
+        </div>
+        <div id="phases"></div>
+        <p class="empty" id="empty" hidden>
+          No matching phases. Try another search or filter.
+        </p>
+      </section>
+      <footer>
+        <div>Snapshot · 05 Oct 2026 · Updated manually with verified work</div>
+        <div class="legend">
+          <span><i></i>Verified</span><span><i></i>Next</span
+          ><span><i></i>Planned</span>
+        </div>
+      </footer>
+    </main>
+    <script>
+      // This is a reviewed roadmap snapshot, not live project telemetry.
+      const phases = [
+        {
+          id: 0,
+          title: "Environment & repository foundation",
+          status: "complete",
+          summary:
+            "Toolchain, reproducible Python package, and GitHub repository.",
+          description:
+            "A working development environment with isolated dependencies and a small installable package.",
+          tasks: [
+            [
+              "Development toolchain",
+              "done",
+              "Git, Python 3.12, uv, Node.js 22, npm, Docker, Compose, and NVIDIA driver verified.",
+            ],
+            [
+              "Python package and dependency lock",
+              "done",
+              "src/aegis, pyproject.toml, uv.lock, and an isolated .venv.",
+            ],
+            [
+              "Tests, lint, formatting, and build",
+              "done",
+              "pytest and Ruff configured; wheel installation checked outside the repository.",
+            ],
+            [
+              "Git and GitHub foundation",
+              "done",
+              "Initial foundation commit pushed to ryash14/aegis-x.",
+            ],
+          ],
+          gate: "Complete. Environment and foundation verified, manually checked, documented, committed, and pushed.",
+        },
+        {
+          id: 1,
+          title: "Production document intelligence pipeline",
+          status: "current",
+          summary:
+            "PDF layout and visual comparison verified. Normalization, batching, OCR, and DOCX remain.",
+          description:
+            "Turn local documents into inspectable structured records with traceable source locations. Complete this phase before adding retrieval.",
+          tasks: [
+            [
+              "Local PDF extraction and provenance",
+              "done",
+              "SHA-256 content identity, metadata, physical page numbers, dimensions, and parser version.",
+            ],
+            [
+              "Validation and explicit failure handling",
+              "done",
+              "Size/page limits, unreadable inputs, corruption, encryption, and missing text; immutable records.",
+            ],
+            [
+              "Diverse local corpus and real-document inspection",
+              "done",
+              "43 downloaded files; checksums verified; 18 PDFs inspected. Text fidelity remains unvalidated.",
+            ],
+            [
+              "Layout blocks and reading order",
+              "next",
+              "Preserve text coordinates; handle columns and investigate the NASA page 11 failure.",
+            ],
+            [
+              "Minimal visual extraction demo",
+              "planned",
+              "Original PDF beside extracted content, page navigation, provenance, and visible warnings.",
+            ],
+            [
+              "Text normalization with traceability",
+              "planned",
+              "Conservative whitespace and hyphen handling; inspect headers/footers while preserving source mapping.",
+            ],
+            [
+              "Persistent records and resumable batch ingestion",
+              "planned",
+              "Versioned output, bounded workers, unchanged-document reuse, failure isolation, and explicit retries.",
+            ],
+            [
+              "DOCX ingestion",
+              "planned",
+              "Paragraphs, headings, tables, embedded-image references, and source positions.",
+            ],
+            [
+              "Local OCR for image-only pages",
+              "planned",
+              "Select an OCR approach after measuring scan fixtures; preserve extraction method and warnings.",
+            ],
+            [
+              "Structure-aware chunking",
+              "planned",
+              "Respect document sections and preserve document/page/block provenance.",
+            ],
+            [
+              "Measured quality and workload validation",
+              "planned",
+              "Review real documents; measure memory, latency, and growing batches without inventing scale claims.",
+            ],
+            [
+              "Phase review, documentation, and Git commit",
+              "planned",
+              "Explain interfaces and limitations; verify visually and commit each completed logical unit.",
+            ],
+          ],
+          gate: "Open. Ingestion, corpus, and layout changes await commit. Finish Phase 1 before retrieval.",
+          links: [
+            ["Corpus guide", "test-corpus.md"],
+            [
+              "NASA source PDF",
+              "../data/test-corpus/reports/nasa-systems-engineering-handbook.pdf",
+            ],
+            [
+              "Extracted text",
+              "../data/test-corpus/inspection/reports/nasa-systems-engineering-handbook.txt",
+            ],
+            [
+              "Inspection results",
+              "../data/test-corpus/inspection/summary.json",
+            ],
+          ],
+        },
+        {
+          id: 2,
+          title: "Multi-index retrieval engine",
+          status: "planned",
+          summary: "Dense + sparse retrieval, filters, fusion, and reranking.",
+          description:
+            "Retrieve relevant evidence from structured chunks and compare each retrieval method with measured baselines.",
+          tasks: [
+            [
+              "Sparse retrieval baseline",
+              "planned",
+              "BM25 with deterministic source and metadata filtering.",
+            ],
+            [
+              "Local embeddings and dense index",
+              "planned",
+              "Choose the model and index from corpus size, hardware, and offline requirements.",
+            ],
+            [
+              "Hybrid retrieval",
+              "planned",
+              "Combine sparse and dense results with explicit fusion rules.",
+            ],
+            [
+              "Reranking",
+              "planned",
+              "Compare relevance improvements against added latency.",
+            ],
+            [
+              "Retrieval evaluation and visual demo",
+              "planned",
+              "Inspect ranked evidence; measure Recall@K, MRR, and NDCG on reviewed queries.",
+            ],
+          ],
+          gate: "Requires Phase 1 completion. Verified retrieval baselines, documented tradeoffs, and a commit before Phase 3.",
+        },
+        {
+          id: 3,
+          title: "Knowledge graph & multimodal intelligence",
+          status: "planned",
+          summary:
+            "Entities, relationships, tables, figures, and cross-document links.",
+          description:
+            "Add structured and visual evidence only where it improves retrieval or reasoning.",
+          tasks: [
+            [
+              "Entity extraction and resolution",
+              "planned",
+              "Define supported entity types and evaluate duplicate resolution.",
+            ],
+            [
+              "Graph representation and retrieval",
+              "planned",
+              "Choose storage after testing useful relationships and graph queries.",
+            ],
+            [
+              "Table structure understanding",
+              "planned",
+              "Preserve headers, cells, units, and source coordinates.",
+            ],
+            [
+              "Figure and diagram understanding",
+              "planned",
+              "Local processing with traceable image regions and evaluated interpretations.",
+            ],
+            [
+              "Multimodal evidence demo and evaluation",
+              "planned",
+              "Compare text, table, figure, and graph evidence on real examples.",
+            ],
+          ],
+          gate: "Complete tests, reviewed examples, quality measurements, documentation, and a commit.",
+        },
+        {
+          id: 4,
+          title: "Query planner & agentic research engine",
+          status: "planned",
+          summary:
+            "Question analysis, decomposition, adaptive retrieval, and investigation.",
+          description:
+            "Plan investigations with explicit state, budgets, and auditable evidence collection.",
+          tasks: [
+            [
+              "Query understanding and decomposition",
+              "planned",
+              "Identify constraints and subtasks while preserving the original question.",
+            ],
+            [
+              "Adaptive retrieval planning",
+              "planned",
+              "Choose retrieval routes from evidence needs and available indexes.",
+            ],
+            [
+              "Multi-hop and multi-document investigation",
+              "planned",
+              "Track intermediate findings and unresolved questions.",
+            ],
+            [
+              "Bounded execution and research trace",
+              "planned",
+              "Explicit stop conditions, tool budgets, and recoverable failures.",
+            ],
+            [
+              "Research trace demo and evaluation",
+              "planned",
+              "Inspect plan steps and evidence, then compare against simpler baselines.",
+            ],
+          ],
+          gate: "Validated investigation behavior and a commit before evidence verification expands.",
+        },
+        {
+          id: 5,
+          title: "Evidence verification & anti-hallucination",
+          status: "planned",
+          summary:
+            "Claims, supporting evidence, contradictions, and abstention.",
+          description:
+            "Make support and uncertainty visible at the claim level.",
+          tasks: [
+            [
+              "Claim extraction and evidence mapping",
+              "planned",
+              "Attach claims to precise source passages and locations.",
+            ],
+            [
+              "Support and contradiction checks",
+              "planned",
+              "Evaluate entailment and conflicting evidence.",
+            ],
+            [
+              "Citation validation",
+              "planned",
+              "Check source existence, passage alignment, and citation precision/recall.",
+            ],
+            [
+              "Insufficient-evidence behavior",
+              "planned",
+              "Abstain or qualify claims when evidence is weak or missing.",
+            ],
+            [
+              "Evidence report demo and evaluation",
+              "planned",
+              "Show supported, disputed, and unsupported claims with reviewed examples.",
+            ],
+          ],
+          gate: "Measure unsupported claims and verification limitations; document and commit.",
+        },
+        {
+          id: 6,
+          title: "Local LLM/VLM & performance optimization",
+          status: "planned",
+          summary:
+            "Model selection, routing, caches, and measured inference performance.",
+          description:
+            "Formalize local inference and optimize demonstrated bottlenecks. Earlier semantic checkpoints may need a minimal local adapter first.",
+          tasks: [
+            [
+              "Local model and runtime selection",
+              "planned",
+              "Fit models to available VRAM and evaluate task quality.",
+            ],
+            [
+              "Explicit model interfaces and routing",
+              "planned",
+              "Separate model calls from deterministic application logic.",
+            ],
+            [
+              "Caching and resource budgets",
+              "planned",
+              "Define invalidation rules, concurrency, and memory limits.",
+            ],
+            [
+              "Latency and throughput profiling",
+              "planned",
+              "Measure TTFT, P50/P95, RAM/VRAM, and throughput.",
+            ],
+            [
+              "Offline execution demonstration",
+              "planned",
+              "Validate offline execution with required assets present locally.",
+            ],
+          ],
+          gate: "Measured improvements, documented hardware limits, and a commit. Reorder only for a concrete model dependency.",
+        },
+        {
+          id: 7,
+          title: "Production FastAPI backend",
+          status: "planned",
+          summary:
+            "Service contracts, jobs, authorization, and operational visibility.",
+          description:
+            "Expose stable core capabilities through a production API.",
+          tasks: [
+            [
+              "API schemas and error contracts",
+              "planned",
+              "Versioned request/response interfaces.",
+            ],
+            [
+              "Background jobs and cancellation",
+              "planned",
+              "Ingestion and research jobs with persistent state and bounded work.",
+            ],
+            [
+              "Document authorization",
+              "planned",
+              "Enforce access in application logic before evidence reaches a model.",
+            ],
+            [
+              "Observability and health checks",
+              "planned",
+              "Structured logs, traces, metrics, and readiness checks.",
+            ],
+            [
+              "Integration and failure testing",
+              "planned",
+              "Exercise the service end to end under failures and concurrent requests.",
+            ],
+          ],
+          gate: "Reviewed API, integration tests, operational documentation, and a commit.",
+        },
+        {
+          id: 8,
+          title: "Next.js intelligence interface",
+          status: "planned",
+          summary:
+            "Production document library, research workspace, and evidence inspection.",
+          description:
+            "Build the complete frontend after core capabilities and service contracts stabilize. Earlier demos remain small local inspection tools.",
+          tasks: [
+            [
+              "Document library and ingestion status",
+              "planned",
+              "Explore documents, failures, versions, and access boundaries.",
+            ],
+            [
+              "Research workspace",
+              "planned",
+              "Question entry, progress, cancellation, and research history.",
+            ],
+            [
+              "Source and evidence viewer",
+              "planned",
+              "Navigate citations, tables, figures, and document pages.",
+            ],
+            [
+              "Claim verification interface",
+              "planned",
+              "Show support, uncertainty, and contradictions.",
+            ],
+            [
+              "Accessibility and end-to-end validation",
+              "planned",
+              "Keyboard navigation, responsive layouts, and service integration.",
+            ],
+          ],
+          gate: "Reviewed end-to-end flows, documented limitations, and a commit.",
+        },
+        {
+          id: 9,
+          title: "Evaluation, benchmarking & security",
+          status: "planned",
+          summary:
+            "System-wide quality, workload measurements, and security review.",
+          description:
+            "Consolidate evaluation already performed at each phase into reproducible system-level evidence.",
+          tasks: [
+            [
+              "Reviewed evaluation datasets",
+              "planned",
+              "Version queries, expected evidence, answers, and known limitations.",
+            ],
+            [
+              "End-to-end quality benchmarks",
+              "planned",
+              "Retrieval, correctness, faithfulness, citation quality, and unsupported claims.",
+            ],
+            [
+              "Growing workload tests",
+              "planned",
+              "Measure indexing, concurrency, throughput, tail latency, and memory.",
+            ],
+            [
+              "Security review and adversarial inputs",
+              "planned",
+              "File handling, prompt injection, authorization, and audit trails.",
+            ],
+            [
+              "Regression reports",
+              "planned",
+              "Compare versions using fixed datasets and documented hardware.",
+            ],
+          ],
+          gate: "Publish measured results and scope limits; document and commit.",
+        },
+        {
+          id: 10,
+          title: "Deployment & portfolio documentation",
+          status: "planned",
+          summary:
+            "Reproducible deployment, offline packaging, and defensible engineering story.",
+          description:
+            "Package a system whose behavior, tradeoffs, and limitations can be demonstrated.",
+          tasks: [
+            [
+              "Containerized deployment",
+              "planned",
+              "Reproducible Docker/Compose services and configuration.",
+            ],
+            [
+              "Offline assets and installation guide",
+              "planned",
+              "Inventory required models, packages, and licenses.",
+            ],
+            [
+              "Deployment verification",
+              "planned",
+              "Exercise startup, persistence, recovery, and resource constraints.",
+            ],
+            [
+              "Architecture and decision records",
+              "planned",
+              "Explain selected designs, alternatives, and scale limits.",
+            ],
+            [
+              "Portfolio demonstration",
+              "planned",
+              "Real examples, reproducible benchmarks, and honest capability claims.",
+            ],
+          ],
+          gate: "Deployment verified, documentation reviewed, final logical units committed.",
+        },
+      ];
+      const container = document.getElementById("phases");
+      const nav = document.getElementById("navigation");
+      let filter = "all";
+      let query = "";
+      let expanded = false;
+      const statusLabels = {
+        complete: "Complete",
+        current: "In progress",
+        planned: "Planned",
+      };
+      function element(tag, className, text) {
+        const item = document.createElement(tag);
+        if (className) item.className = className;
+        if (text !== undefined) item.textContent = text;
+        return item;
+      }
+      for (const phase of phases) {
+        const number = String(phase.id).padStart(2, "0");
+        const link = element("a", phase.status === "current" ? "active" : "");
+        link.href = "#phase-" + phase.id;
+        link.append(
+          element("span", "nav-number", number),
+          element("span", "", phase.title),
+          element(
+            "span",
+            "nav-dot " +
+              (phase.status === "complete"
+                ? "done"
+                : phase.status === "current"
+                  ? "current"
+                  : ""),
+          ),
+        );
+        link.addEventListener("click", () => {
+          filter = "all";
+          query = "";
+          document.getElementById("search").value = "";
+          applyFilters();
+          document.getElementById("phase-" + phase.id).open = true;
+        });
+        nav.append(link);
+        const details = element("details", "phase " + phase.status);
+        details.id = "phase-" + phase.id;
+        details.open = phase.status === "current";
+        details.dataset.status = phase.status;
+        details.dataset.search = [
+          phase.title,
+          phase.summary,
+          ...phase.tasks.flat(),
+        ]
+          .join(" ")
+          .toLowerCase();
+        const summary = element("summary");
+        const title = element("div", "phase-title");
+        title.append(
+          element("strong", "", phase.title),
+          element("small", "", phase.summary),
+        );
+        summary.append(
+          element("span", "phase-number", number),
+          title,
+          element("span", "badge " + phase.status, statusLabels[phase.status]),
+          element("span", "chevron", "›"),
+        );
+        details.append(summary);
+        const body = element("div", "phase-body");
+        body.append(element("p", "description", phase.description));
+        const tasks = element("ul", "tasks");
+        for (const [name, status, note] of phase.tasks) {
+          const row = element(
+            "li",
+            "task " +
+              (status === "done"
+                ? "done"
+                : status === "next"
+                  ? "next-task"
+                  : ""),
+          );
+          const content = element("div", "task-content");
+          content.append(element("span", "", name), element("small", "", note));
+          row.append(
+            element(
+              "span",
+              "task-marker",
+              status === "done" ? "✓" : status === "next" ? "→" : "",
+            ),
+            content,
+            element(
+              "span",
+              "task-status",
+              status === "done"
+                ? "Verified"
+                : status === "next"
+                  ? "Next"
+                  : "Planned",
+            ),
+          );
+          tasks.append(row);
+        }
+        body.append(tasks);
+        const gate = element("div", "gate");
+        gate.append(
+          element("strong", "", "Phase gate · "),
+          document.createTextNode(phase.gate),
+        );
+        body.append(gate);
+        if (phase.links) {
+          const links = element("div", "links");
+          for (const [label, url] of phase.links) {
+            const a = element("a", "", label + " ↗");
+            a.href = url;
+            links.append(a);
+          }
+          body.append(links);
+        }
+        details.append(body);
+        container.append(details);
+      }
+      const total = phases.reduce((n, p) => n + p.tasks.length, 0);
+      const done = phases.reduce(
+        (n, p) => n + p.tasks.filter((t) => t[1] === "done").length,
+        0,
+      );
+      document.getElementById("checkpoint-count").textContent =
+        `${done} / ${total}`;
+      function applyFilters() {
+        let visible = 0;
+        for (const item of container.children) {
+          item.hidden =
+            !(filter === "all" || item.dataset.status === filter) ||
+            !item.dataset.search.includes(query);
+          if (!item.hidden) {
+            visible++;
+            if (query) item.open = true;
+          }
+        }
+        document.getElementById("empty").hidden = visible > 0;
+        for (const button of document.querySelectorAll("[data-filter]"))
+          button.setAttribute(
+            "aria-pressed",
+            String(button.dataset.filter === filter),
+          );
+      }
+      for (const button of document.querySelectorAll("[data-filter]"))
+        button.addEventListener("click", () => {
+          filter = button.dataset.filter;
+          applyFilters();
+        });
+      document.getElementById("search").addEventListener("input", (event) => {
+        query = event.target.value.trim().toLowerCase();
+        applyFilters();
+      });
+      document.getElementById("expand").addEventListener("click", (event) => {
+        expanded = !expanded;
+        for (const item of container.children)
+          if (!item.hidden) item.open = expanded;
+        event.target.textContent = expanded ? "Collapse all" : "Expand all";
+      });
+    </script>
+  </body>
+</html>
