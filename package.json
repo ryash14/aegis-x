@@ -1,0 +1,6 @@
+{
+  "name": "aegis-workspace-checks",
+  "private": true,
+  "scripts": {"test:browser": "node scripts/check_workspace_browser.mjs"},
+  "devDependencies": {"playwright": "1.63.0"}
+}

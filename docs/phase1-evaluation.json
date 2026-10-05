@@ -1,0 +1,109 @@
+{
+  "created_at": "2026-10-05T17:52:40.859993+00:00",
+  "python": "3.12.15",
+  "parser": "1.28.2",
+  "machine": "x86_64",
+  "quality": [
+    {
+      "name": "ocr_test.pdf",
+      "check": "Manually transcribed short scan",
+      "character_error_rate": 0.0,
+      "passed": true
+    },
+    {
+      "name": "ocr_test_rotated_90.pdf",
+      "check": "Manually transcribed short scan",
+      "character_error_rate": 0.0,
+      "passed": true
+    },
+    {
+      "name": "ocr_test_rotated_180.pdf",
+      "check": "Manually transcribed short scan",
+      "character_error_rate": 0.0,
+      "passed": true
+    },
+    {
+      "name": "NASA page 11",
+      "check": "Drop-cap and discretionary-hyphen repairs retain mappings",
+      "passed": true
+    },
+    {
+      "name": "NASA full document",
+      "check": "Complete chunk/source coverage",
+      "passed": true,
+      "chunks": 751
+    },
+    {
+      "name": "DOCX table fixture",
+      "check": "Seven tables and outline heading retained",
+      "passed": true
+    },
+    {
+      "name": "Grouped-image DOCX",
+      "check": "Eight embedded-image relationships retain hashes",
+      "passed": true
+    },
+    {
+      "name": "Equation DOCX",
+      "check": "Equation-layout limitation reported",
+      "passed": true
+    }
+  ],
+  "workloads": [
+    {
+      "documents": 8,
+      "workers": 2,
+      "succeeded": 8,
+      "failed": 0,
+      "elapsed_seconds": 1.857,
+      "documents_per_second": 4.307,
+      "max_active_jobs": 2,
+      "peak_worker_rss_mib": 198.5,
+      "controller_rss_mib": 198.77,
+      "chunks": 21,
+      "restart_preserved_ready": true
+    },
+    {
+      "documents": 32,
+      "workers": 2,
+      "succeeded": 32,
+      "failed": 0,
+      "elapsed_seconds": 6.356,
+      "documents_per_second": 5.035,
+      "max_active_jobs": 2,
+      "peak_worker_rss_mib": 198.64,
+      "controller_rss_mib": 198.85,
+      "chunks": 86,
+      "restart_preserved_ready": true
+    },
+    {
+      "documents": 128,
+      "workers": 2,
+      "succeeded": 128,
+      "failed": 0,
+      "elapsed_seconds": 25.045,
+      "documents_per_second": 5.111,
+      "max_active_jobs": 2,
+      "peak_worker_rss_mib": 198.77,
+      "controller_rss_mib": 198.86,
+      "chunks": 344,
+      "restart_preserved_ready": true
+    }
+  ],
+  "corpus": {
+    "documents": 24,
+    "succeeded": 23,
+    "failed": [
+      {
+        "name": "2206.01062_pg3.pdf",
+        "code": "encrypted_pdf"
+      }
+    ],
+    "elapsed_seconds": 38.617,
+    "chunks": 5008,
+    "max_active_jobs": 2,
+    "peak_worker_rss_mib": 273.93,
+    "controller_rss_mib": 197.83
+  },
+  "passed": true
+}

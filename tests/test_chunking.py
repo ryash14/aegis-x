@@ -271,3 +271,20 @@ def test_empty_documents_and_invalid_input():
 def test_invalid_chunk_settings(settings):
     with pytest.raises(ValueError):
         ChunkConfig(**settings)
+
+
+def test_runtime_validation_rejects_missing_and_invalid_fragments():
+    from aegis.chunking.validation import validate_document
+
+    document = docx([paragraph("Engine pressure 42 kPa", 0)])
+    config = ChunkConfig(max_chars=100, overlap_chars=10)
+    chunks = chunk_document(document, config)
+    assert validate_document(document, chunks, config)["status"] == "complete"
+    with pytest.raises(ValueError, match="completely covered"):
+        validate_document(document, (), config)
+    invalid = replace(chunks[0].fragments[0], unit_start=-1)
+    with pytest.raises(ValueError, match="invalid range"):
+        validate_document(document, (replace(chunks[0], fragments=(invalid,)),), config)
+    corrupt = replace(chunks[0], text="X" + chunks[0].text[1:])
+    with pytest.raises(ValueError, match="differs"):
+        validate_document(document, (corrupt,), config)

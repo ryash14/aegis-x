@@ -14,12 +14,22 @@ behavior. The production frontend remains a separate later phase.
 
 ## Current status
 
-Phase 0 is complete. Phase 1 implements local PDF ingestion, provenance,
-optional text geometry and geometric reading order. A local experiment workspace
-preserves baseline, layout, normalized text and local OCR comparisons across saved runs.
-DOCX extraction and resumable PDF batches are also implemented.
-Retrieval, reasoning, inference, and user interfaces are not implemented.
-Air-gapped operation is a design goal, not a validated capability at this stage.
+**Phase 1 complete:** PDF/DOCX extraction, local PDF OCR, normalization,
+source-traceable chunking, persistent jobs, and a live inspection website.
+Phase 2 retrieval starts next session. Production multi-user deployment remains
+in later phases. See [the Phase 1 revision](docs/phase1-review.md).
+
+## Open the application
+
+```bash
+uv sync --locked
+uv run --locked aegis-workspace
+```
+
+Open **http://127.0.0.1:8765**. Upload multiple PDFs/DOCX files; inspect file sizes,
+source previews, extraction methods, OCR confidence, and chunks with source
+highlights. The library survives restarts. **Try sample documents** uses the downloaded
+local corpus. See [workspace usage and checks](docs/workspace.md).
 
 ## Development setup
 
@@ -44,7 +54,7 @@ uv run --locked ruff format --check .
 uv build
 ```
 
-Expected: Python 3.12.x, passing packaging and PDF ingestion tests, successful lint and
+Expected: Python 3.12.x, passing ingestion, chunking, workspace and packaging tests, successful lint and
 format checks, and a wheel plus source archive in `dist/`.
 
 ## Repository layout
@@ -115,7 +125,8 @@ Input must start with a PDF header; filename extensions do not determine format.
   bound decompression cost, extracted-text size, CPU time, or native parser memory.
   The Python API runs in-process. Batch jobs isolate parser/OCR subprocesses and
   enforce timeouts; this is not a hardened hostile-input sandbox.
-- Tests generate local fixtures; they do not establish quality on real research PDFs.
+- Generated-fixture tests and targeted real-corpus checks passed. General extraction
+  accuracy remains unproven; see [measured results and boundaries](docs/phase1-review.md).
 
 PyMuPDF is offered under AGPL or a commercial license; this repository has not
 selected a distribution license. See the

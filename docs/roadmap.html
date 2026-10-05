@@ -697,13 +697,13 @@
       </div>
       <div class="nav-label">Development</div>
       <nav id="navigation"></nav>
-      <div class="sidebar-note">
+      <!-- <div class="sidebar-note">
         One phase at a time.<br />Implement → test → inspect<br />→ document →
         commit.
       </div>
       <div class="sidebar-note">
         Local files · No telemetry<br />No external font requests
-      </div>
+      </div> -->
     </aside>
     <main>
       <div class="topbar">
@@ -718,8 +718,8 @@
       <div class="stats" aria-label="Current project status">
         <div class="stat">
           <div class="stat-label">Current phase</div>
-          <div class="stat-value">01 · Document intelligence</div>
-          <div class="stat-sub">PDF + batches verified · phase still open</div>
+          <div class="stat-value">01 · Complete</div>
+          <div class="stat-sub">Document intelligence · reviewed and verified</div>
         </div>
         <div class="stat">
           <div class="stat-label">Local experimental corpus</div>
@@ -735,14 +735,16 @@
       <div class="next">
         <div class="next-icon" aria-hidden="true">↗</div>
         <div>
-          <div class="eyebrow">Next checkpoint</div>
-          <strong>Measure quality and growing workloads</strong>
-          <p>Review extraction quality, chunk usefulness and resource limits.</p>
+          <div class="eyebrow">Next session</div>
+          <strong>Phase 2 · sparse retrieval baseline</strong>
+          <p>Phase 1 complete. Resume retrieval tomorrow.</p>
         </div>
       </div>
       <section aria-label="Phase roadmap">
         <div class="section-label" style="flex-wrap: wrap; gap: 12px">
           <h2>Phases & checkpoints</h2>
+          <a href="http://127.0.0.1:8765">Live workspace ↗</a>
+          <a href="phase1-review.md">Phase 1 revision ↗</a>
           <a href="experiments.html">Text experiments ↗</a>
           <a href="batches.html">Batch runs ↗</a>
           <button class="text-button" id="expand" type="button">
@@ -820,9 +822,9 @@
         {
           id: 1,
           title: "Production document intelligence pipeline",
-          status: "current",
+          status: "complete",
           summary:
-            "PDF extraction, normalization and resumable batches verified. DOCX, OCR and traceable chunking verified. Phase validation remains.",
+            "PDF, DOCX, OCR and traceable chunks verified. Live workspace, quality checks and growing queues complete.",
           description:
             "Turn local documents into inspectable structured records with traceable source locations. Complete this phase before adding retrieval.",
           tasks: [
@@ -839,7 +841,7 @@
             [
               "Diverse local corpus and real-document inspection",
               "done",
-              "43 downloaded files; checksums verified; 18 PDFs inspected. Text fidelity remains unvalidated.",
+              "43 downloaded files; checksums verified; supported corpus and targeted quality cases evaluated.",
             ],
             [
               "Layout blocks and reading order",
@@ -878,17 +880,25 @@
             ],
             [
               "Measured quality and workload validation",
-              "next",
-              "Review real documents; measure memory, latency, and growing batches without inventing scale claims.",
+              "done",
+              "8 quality cases passed; 23 corpus successes plus expected encryption failure; 8/32/128-document queues verified.",
+            ],
+            [
+              "Live upload and inspection workspace",
+              "done",
+              "Multiple files, sizes, persistent progress, PDF/DOCX previews, methods, source overlays and chunk controls.",
             ],
             [
               "Phase review, documentation, and Git commit",
-              "planned",
-              "Explain interfaces and limitations; verify visually and commit each completed logical unit.",
+              "done",
+              "Revision guide, measured limits, real Chrome checks, automated verification and Git checkpoint.",
             ],
           ],
-          gate: "Open. PDF, corpus, layout and experiment foundation committed. Quality and workload validation remain before retrieval.",
+          gate: "Complete. Ingestion, OCR, chunking and live inspection verified; quality and workload evidence documented. Phase 2 deferred to next session.",
           links: [
+            ["Live workspace", "http://127.0.0.1:8765"],
+            ["Phase 1 revision", "phase1-review.md"],
+            ["Measured results", "phase1-evaluation.json"],
             ["Text experiments", "experiments.html"],
             ["OCR experiments", "experiments.html#ocr"],
             ["DOCX inspection", "docx.html"],

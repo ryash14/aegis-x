@@ -9,82 +9,11 @@ from pathlib import Path
 from uuid import uuid4
 
 from aegis.chunking import ChunkConfig, chunk_document, iter_units
+from aegis.chunking.validation import source_texts, validate_document
 from aegis.ingestion import IngestionError, ingest_docx, ingest_pdf
-from aegis.ingestion.docx import ExtractedDocx
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "data/chunk-experiments"
-
-
-def validate(document, units, chunks, config):
-    """Check coverage and output/source ranges against actual immutable extraction."""
-    by_id = {unit.unit_id: unit for unit in units}
-    coverage = {key: [] for key, unit in by_id.items() if unit.text.strip()}
-    source_text = {}
-    if isinstance(document, ExtractedDocx):
-
-        def index_paragraphs(blocks):
-            for block in blocks:
-                if block.kind == "paragraph":
-                    source_text[block.source] = block.text
-                index_paragraphs(block.children)
-
-        index_paragraphs(document.blocks)
-    else:
-        for page in document.pages:
-            source_text[f"native_page_text:{page.number}"] = page.text
-            if page.ocr:
-                source_text[f"ocr_text:{page.number}"] = page.ocr.text
-            if page.layout:
-                for block in page.layout.blocks:
-                    for index, line in enumerate(block.lines):
-                        source_text[f"native_line:{page.number}:{block.block_id}:{index}"] = (
-                            line.text
-                        )
-    for chunk in chunks:
-        if not 0 < len(chunk.text) <= config.max_chars:
-            raise ValueError("Chunk length limit violated")
-        cursor = 0
-        for mapping in chunk.mappings:
-            if mapping.output_start != cursor or not cursor < mapping.output_end <= len(chunk.text):
-                raise ValueError("Output mappings have a gap or invalid range")
-            cursor = mapping.output_end
-            if not mapping.sources and mapping.kind != "separator":
-                raise ValueError("Text has no source")
-            for source in mapping.sources:
-                key = source.xml_path or (
-                    f"native_line:{source.page}:{source.block_id}:{source.line_index}"
-                    if source.domain == "native_line"
-                    else f"{source.domain}:{source.page}"
-                )
-                value = source_text[key]
-                if not 0 <= source.start < source.end <= len(value):
-                    raise ValueError("Source range outside original extraction")
-                if (
-                    mapping.kind == "copy"
-                    and value[source.start : source.end]
-                    != chunk.text[mapping.output_start : mapping.output_end]
-                ):
-                    raise ValueError("Copy mapping differs from original extraction")
-        if cursor != len(chunk.text):
-            raise ValueError("Incomplete chunk mapping")
-        for fragment in chunk.fragments:
-            unit = by_id[fragment.unit_id]
-            if (
-                unit.text[fragment.unit_start : fragment.unit_end]
-                != chunk.text[fragment.output_start : fragment.output_end]
-            ):
-                raise ValueError("Chunk fragment differs from structural unit")
-            coverage[unit.unit_id].append((fragment.unit_start, fragment.unit_end))
-    for key, ranges in coverage.items():
-        cursor = 0
-        for start, end in sorted(ranges):
-            if start > cursor:
-                raise ValueError("Source unit has missing text")
-            cursor = max(cursor, end)
-        if cursor != len(by_id[key].text):
-            raise ValueError("Source unit is not completely covered")
-    return source_text
 
 
 def javascript(name, value):
@@ -125,7 +54,8 @@ def main():
             )
             units = tuple(iter_units(document, config))
             chunks = chunk_document(document, config)
-            source_text = validate(document, units, chunks, config)
+            validate_document(document, chunks, config)
+            source_text = source_texts(document)
             entry.update(
                 status="verified",
                 document_id=document.document_id,

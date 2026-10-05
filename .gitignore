@@ -22,3 +22,6 @@ data/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Browser verification dependencies
+node_modules/

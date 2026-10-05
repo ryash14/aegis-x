@@ -2,6 +2,7 @@
 
 import hashlib
 import logging
+from collections.abc import Callable
 from pathlib import Path
 
 import pymupdf
@@ -34,6 +35,7 @@ def ingest_pdf(
     normalization_config: NormalizationConfig | None = None,
     include_ocr: bool = False,
     ocr_config: OCRConfig | None = None,
+    progress_callback: Callable[[int, int, str], None] | None = None,
 ) -> ExtractedDocument:
     """Extract native PDF text with optional offline OCR for pages without native text.
 
@@ -77,6 +79,8 @@ def ingest_pdf(
             pages = []
             engine = None
             for number, page in enumerate(document, start=1):
+                if progress_callback:
+                    progress_callback(number - 1, document.page_count, "parsing")
                 text = page.get_text("text", sort=True)
                 status = PageStatus.TEXT
                 if not text.strip():
@@ -101,6 +105,8 @@ def ingest_pdf(
                     selected_ocr_config = ocr_config or OCRConfig()
                     if engine is None:
                         engine = engine_identity(selected_ocr_config)
+                    if progress_callback:
+                        progress_callback(number - 1, document.page_count, "ocr")
                     ocr = extract_ocr(page, selected_ocr_config, engine=engine)
                 pages.append(
                     ExtractedPage(
@@ -115,6 +121,8 @@ def ingest_pdf(
                         warnings,
                     )
                 )
+                if progress_callback:
+                    progress_callback(number, document.page_count, "parsing")
             if not any(page.text.strip() or (page.ocr and page.ocr.text.strip()) for page in pages):
                 raise IngestionError(
                     ErrorCode.NO_EXTRACTABLE_TEXT,

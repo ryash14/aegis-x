@@ -94,3 +94,10 @@ Tests cover spanning headings/footers, column order, unchanged baseline output,
 span/coordinate preservation, rotations, empty/overlapping blocks, and many-block
 inputs. The browser workspace checks switching experiments/runs/documents/pages,
 overlays, error displays, and responsive rendering.
+
+## Live workspace
+
+For dynamic uploads and complete page/chunk inspection, open
+http://127.0.0.1:8765 after starting `uv run --locked aegis-workspace`.
+See [workspace usage](workspace.md) and [Phase 1 revision](phase1-review.md).
+Earlier saved experiments remain available here for comparison.
