@@ -65,3 +65,16 @@ Elapsed time includes source hashing, subprocess startup, parsing, record writin
 and manifest updates, ending before report serialization. Peak worker RSS is the
 largest child-process peak on Linux during a fresh CLI invocation, not total RAM
 across concurrent workers. Historical runs retain their original measurements.
+
+## Persist chunks
+
+```bash
+uv run --locked python -m aegis.ingestion data/test-corpus --mode ocr --chunks --workers 2
+```
+
+`--chunks` saves `chunking.config`, `chunking.algorithm`, and `chunking.chunks`
+alongside the original extracted document. Defaults are 1,800 characters and
+160 overlap characters; override `--chunk-max-chars` and `--chunk-overlap-chars`.
+Changing chunk settings or chunker code invalidates its cached records. Earlier
+extraction records remain available. Prefer `normalized` or `ocr` mode for native
+block mappings; text mode uses page-text offsets without geometry.

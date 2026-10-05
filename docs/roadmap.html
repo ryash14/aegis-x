@@ -736,8 +736,8 @@
         <div class="next-icon" aria-hidden="true">↗</div>
         <div>
           <div class="eyebrow">Next checkpoint</div>
-          <strong>Add structure-aware chunking</strong>
-          <p>Split document sections while retaining source references.</p>
+          <strong>Measure quality and growing workloads</strong>
+          <p>Review extraction quality, chunk usefulness and resource limits.</p>
         </div>
       </div>
       <section aria-label="Phase roadmap">
@@ -822,7 +822,7 @@
           title: "Production document intelligence pipeline",
           status: "current",
           summary:
-            "PDF extraction, normalization and resumable batches verified. DOCX and local OCR verified. Chunking and phase validation remain.",
+            "PDF extraction, normalization and resumable batches verified. DOCX, OCR and traceable chunking verified. Phase validation remains.",
           description:
             "Turn local documents into inspectable structured records with traceable source locations. Complete this phase before adding retrieval.",
           tasks: [
@@ -873,12 +873,12 @@
             ],
             [
               "Structure-aware chunking",
-              "next",
-              "Respect document sections and preserve document/page/block provenance.",
+              "done",
+              "Bounded PDF/OCR/DOCX chunks with section boundaries, table rows and source mappings.",
             ],
             [
               "Measured quality and workload validation",
-              "planned",
+              "next",
               "Review real documents; measure memory, latency, and growing batches without inventing scale claims.",
             ],
             [
@@ -887,11 +887,12 @@
               "Explain interfaces and limitations; verify visually and commit each completed logical unit.",
             ],
           ],
-          gate: "Open. PDF, corpus, layout and experiment foundation committed. Chunking and phase validation remain before retrieval.",
+          gate: "Open. PDF, corpus, layout and experiment foundation committed. Quality and workload validation remain before retrieval.",
           links: [
             ["Text experiments", "experiments.html"],
             ["OCR experiments", "experiments.html#ocr"],
             ["DOCX inspection", "docx.html"],
+            ["Chunk inspection", "chunks.html"],
             ["Batch runs", "batches.html"],
             ["Corpus guide", "test-corpus.md"],
             [

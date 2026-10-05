@@ -18,6 +18,8 @@ from uuid import uuid4
 
 import pymupdf
 
+from aegis.chunking import ChunkConfig, chunk_document
+
 from .errors import ErrorCode, IngestionError
 from .job_store import JobStore
 from .layout_models import LayoutConfig
@@ -76,6 +78,7 @@ class BatchConfig:
     limits: IngestionLimits = IngestionLimits()
     timeout_seconds: float = 300
     ocr: OCRConfig = OCRConfig()
+    chunks: ChunkConfig | None = None
 
     def __post_init__(self) -> None:
         if self.mode not in {"text", "layout", "normalized", "ocr"}:
@@ -103,6 +106,13 @@ def _pipeline_id(config: BatchConfig) -> str:
     if config.mode == "ocr":
         settings["ocr"] = asdict(config.ocr)
         settings["ocr_engine"] = asdict(engine_identity(config.ocr))
+    if config.chunks:
+        chunk_implementation = hashlib.sha256()
+        for source in sorted((Path(__file__).parent.parent / "chunking").glob("*.py")):
+            chunk_implementation.update(source.name.encode())
+            chunk_implementation.update(source.read_bytes())
+        settings["chunking"] = asdict(config.chunks)
+        settings["chunk_implementation"] = chunk_implementation.hexdigest()
     return hashlib.sha256(json.dumps(settings, sort_keys=True).encode()).hexdigest()
 
 
@@ -140,6 +150,12 @@ def _worker(
                 saved["normalized"]["page_mappings"] = [
                     asdict(mapping) for mapping in page.normalized.mappings
                 ]
+        if config.chunks:
+            record["chunking"] = {
+                "algorithm": "structure-v1",
+                "config": asdict(config.chunks),
+                "chunks": [asdict(chunk) for chunk in chunk_document(document, config.chunks)],
+            }
         destination = Path(output)
         _atomic_json(destination, record)
         return {
@@ -338,6 +354,7 @@ def run_batch(source: str | Path, output: str | Path, config: BatchConfig | None
             "source": str(source),
             "mode": config.mode,
             "workers": config.workers,
+            "chunking_config": asdict(config.chunks) if config.chunks else None,
             "pipeline_id": pipeline,
             "elapsed_seconds": round(time.perf_counter() - started, 3),
             "peak_worker_rss_mib": round(

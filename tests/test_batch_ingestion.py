@@ -157,3 +157,21 @@ def test_timeout_kills_child_processes_and_cleans_rasters(tmp_path, monkeypatch)
     time.sleep(0.6)
     assert not marker.exists()
     assert directories and not directories[0].exists()
+
+
+def test_chunk_records_resume_and_settings_invalidate_cache(tmp_path):
+    from aegis.chunking import ChunkConfig
+
+    path = write_pdf(tmp_path / "report.pdf", "Engine pressure remains stable. " * 12)
+    output = tmp_path / "output"
+    config = BatchConfig(mode="normalized", chunks=ChunkConfig(max_chars=100, overlap_chars=20))
+    first = run_batch(path, output, config)
+    assert first["succeeded"] == 1
+    saved = json.loads(Path(first["jobs"][0]["output_path"]).read_text())
+    assert saved["chunking"]["config"]["max_chars"] == 100
+    assert saved["chunking"]["chunks"]
+    assert all(len(chunk["text"]) <= 100 for chunk in saved["chunking"]["chunks"])
+    assert run_batch(path, output, config)["cached"] == 1
+    changed = BatchConfig(mode="normalized", chunks=ChunkConfig(max_chars=120, overlap_chars=20))
+    assert _pipeline_id(config) != _pipeline_id(changed)
+    assert run_batch(path, output, changed)["succeeded"] == 1

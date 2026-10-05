@@ -110,7 +110,7 @@ Input must start with a PDF header; filename extensions do not determine format.
 - Text uses PyMuPDF's sorted extraction; complex columns, tables, and equations
   do not have guaranteed reading order or preserved structure.
 - Optional layout blocks, conservative normalization, and resumable PDF batch
-  ingestion are available. DOCX structure extraction is available separately. Optional local PDF OCR is available. No chunking or retrieval yet.
+  ingestion are available. DOCX structure extraction is available separately. Optional local PDF OCR is available. Structure-aware chunking is available. No retrieval yet.
 - Default limits are 100 MiB and 2,000 pages. File size and page limits do not
   bound decompression cost, extracted-text size, CPU time, or native parser memory.
   The Python API runs in-process. Batch jobs isolate parser/OCR subprocesses and
@@ -185,3 +185,22 @@ print(document.pages[0].ocr.text)
 
 `--mode ocr` adds fallback OCR to resumable PDF batches. See [OCR behavior and
 measurements](docs/ocr.md) for setup, limits, and testing your own scans.
+
+### Structure-aware chunking
+
+Open [chunk inspection](docs/chunks.html) to compare extracted source units with
+bounded chunks, highlighted overlap, and native source references. The local run
+includes large PDFs, DOCX tables, and rotated scans.
+
+```python
+from aegis.chunking import ChunkConfig, iter_chunks
+from aegis.ingestion import ingest_pdf
+
+document = ingest_pdf("data/report.pdf", include_normalized=True, include_ocr=True)
+for chunk in iter_chunks(document, ChunkConfig(max_chars=1800, overlap_chars=160)):
+    print(chunk.chunk_id, chunk.text, chunk.mappings)
+```
+
+For DOCX, pass the result of `ingest_docx` to the same chunking API. Add `--chunks`
+to PDF batch ingestion to persist chunks alongside extraction records.
+See [chunking behavior and limits](docs/chunking.md).

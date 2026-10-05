@@ -3,6 +3,8 @@
 import argparse
 from pathlib import Path
 
+from aegis.chunking import ChunkConfig
+
 from .batch import BatchConfig, run_batch
 from .errors import IngestionError
 from .models import IngestionLimits
@@ -26,6 +28,9 @@ def main() -> int:
     parser.add_argument("--ocr-max-pixels", type=int, default=20_000_000)
     parser.add_argument("--ocr-timeout-seconds", type=float, default=60)
     parser.add_argument("--no-ocr-orientation", action="store_true")
+    parser.add_argument("--chunks", action="store_true", help="Persist traceable document chunks")
+    parser.add_argument("--chunk-max-chars", type=int, default=1800)
+    parser.add_argument("--chunk-overlap-chars", type=int, default=160)
     args = parser.parse_args()
     try:
         config = BatchConfig(
@@ -41,6 +46,9 @@ def main() -> int:
                 timeout_seconds=args.ocr_timeout_seconds,
                 detect_orientation=not args.no_ocr_orientation,
             ),
+            ChunkConfig(max_chars=args.chunk_max_chars, overlap_chars=args.chunk_overlap_chars)
+            if args.chunks
+            else None,
         )
         report = run_batch(args.source, args.output, config)
     except (IngestionError, OSError, RuntimeError, ValueError) as exc:
