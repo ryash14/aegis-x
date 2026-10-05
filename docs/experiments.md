@@ -9,6 +9,10 @@ additional dependencies are required.
 - **Baseline text:** original sorted PyMuPDF text, preserved unchanged.
 - **Layout & reading order:** native text blocks, lines, spans, fonts, and bounding
   boxes; a geometric order determines how blocks are displayed.
+- **Normalized text:** conservative edits with block/line character mappings.
+  Ligatures expand, discretionary soft hyphens join adjacent wrapped lines,
+  trailing whitespace is trimmed, and geometrically supported drop caps move
+  to the body text. Hard hyphens, internal spacing, units, headers, and footers remain.
 - **Saved run:** earlier snapshots remain available. Changing runs does not rebuild
   or overwrite previous extraction results.
 - **Document / sample page:** choose an exported physical PDF page. Click a source
@@ -16,7 +20,9 @@ additional dependencies are required.
 
 For the NASA handbook, compare physical page 11 in both experiments. Layout
 ordering keeps the left column together before the right column. The drop-cap
-`T` remains a separate native line; normalization is still pending.
+`T` remains a separate native line in the layout experiment. The normalization
+experiment maps it into `This handbook` while retaining both source blocks.
+Click the repaired paragraph to highlight its body and drop-cap source regions.
 Scanned PDFs show source images alongside the explicit missing-text error.
 Encrypted documents show the rejection without attempting password recovery.
 
@@ -47,6 +53,18 @@ page = document.pages[0]
 baseline = page.text
 layout = page.layout
 ```
+
+Use `include_normalized=True` to include layout and normalization together.
+`page.normalized.text` contains the normalized text. Block mappings use local
+output offsets; `page.normalized.mappings` derives page-wide offsets, including
+generated separators. Source ranges identify the native block, zero-based line,
+and half-open Unicode character range. The parent document hash and page number
+complete provenance. Removal events remain in each block's change log.
+
+Normalization uses `conservative-v1`; its settings are recorded in new saved runs.
+Earlier runs do not gain new outputs retroactively. Selecting normalization on
+an older run displays its unavailability explicitly. Source mapping storage scales
+with contiguous runs and edits, not with a separate record for every character.
 
 Layout is opt-in so existing callers retain baseline behavior and cost. Layout
 records preserve native blocks/lines/spans rather than guessing semantic sections.

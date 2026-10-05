@@ -723,7 +723,7 @@
         <div class="stat">
           <div class="stat-label">Current phase</div>
           <div class="stat-value">01 · Document intelligence</div>
-          <div class="stat-sub">PDF + layout verified · phase still open</div>
+          <div class="stat-sub">PDF + normalization verified · phase still open</div>
         </div>
         <div class="stat">
           <div class="stat-label">Local experimental corpus</div>
@@ -740,7 +740,7 @@
         <div class="next-icon" aria-hidden="true">↗</div>
         <div>
           <div class="eyebrow">Next checkpoint</div>
-          <strong>Normalize text with traceability</strong>
+          <strong>Persist and resume batch ingestion</strong>
           <p>
             NASA handbook page 11 exposes mixed columns and misplaced drop-cap
             text. Compare source pages with extraction in a minimal local visual
@@ -828,7 +828,7 @@
           title: "Production document intelligence pipeline",
           status: "current",
           summary:
-            "PDF layout and visual comparison verified. Normalization, batching, OCR, and DOCX remain.",
+            "PDF layout and normalization verified. Batching, OCR, DOCX, and chunking remain.",
           description:
             "Turn local documents into inspectable structured records with traceable source locations. Complete this phase before adding retrieval.",
           tasks: [
@@ -849,22 +849,22 @@
             ],
             [
               "Layout blocks and reading order",
-              "next",
+              "done",
               "Preserve text coordinates; handle columns and investigate the NASA page 11 failure.",
             ],
             [
               "Minimal visual extraction demo",
-              "planned",
+              "done",
               "Original PDF beside extracted content, page navigation, provenance, and visible warnings.",
             ],
             [
               "Text normalization with traceability",
-              "planned",
+              "done",
               "Conservative whitespace and hyphen handling; inspect headers/footers while preserving source mapping.",
             ],
             [
               "Persistent records and resumable batch ingestion",
-              "planned",
+              "next",
               "Versioned output, bounded workers, unchanged-document reuse, failure isolation, and explicit retries.",
             ],
             [
@@ -893,7 +893,7 @@
               "Explain interfaces and limitations; verify visually and commit each completed logical unit.",
             ],
           ],
-          gate: "Open. Ingestion, corpus, and layout changes await commit. Finish Phase 1 before retrieval.",
+          gate: "Open. PDF, corpus, layout and experiment foundation committed. Finish Phase 1 before retrieval.",
           links: [
             ["Corpus guide", "test-corpus.md"],
             [

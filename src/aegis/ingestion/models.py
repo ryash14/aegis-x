@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 
 from .layout_models import PageLayout
+from .normalization_models import NormalizedPage
 
 
 class PageStatus(StrEnum):
@@ -41,6 +42,7 @@ class ExtractedPage:
     height_points: float
     status: PageStatus
     layout: PageLayout | None = None
+    normalized: NormalizedPage | None = None
 
 
 @dataclass(frozen=True, slots=True)

@@ -16,7 +16,7 @@ behavior. The production frontend remains a separate later phase.
 
 Phase 0 is complete. Phase 1 implements local PDF ingestion, provenance,
 optional text geometry and geometric reading order. A local experiment workspace
-preserves baseline and layout comparisons across saved runs.
+preserves baseline, layout, and normalized text comparisons across saved runs.
 Retrieval, reasoning, inference, and user interfaces are not implemented.
 Air-gapped operation is a design goal, not a validated capability at this stage.
 
@@ -106,7 +106,8 @@ Input must start with a PDF header; filename extensions do not determine format.
 
 - Text uses PyMuPDF's sorted extraction; complex columns, tables, and equations
   do not have guaranteed reading order or preserved structure.
-- No OCR, layout blocks, DOCX, chunking, storage, CLI, or retrieval yet.
+- Optional layout blocks and conservative normalization are available. No OCR,
+  DOCX, chunking, production storage/CLI, or retrieval yet.
 - Default limits are 100 MiB and 2,000 pages. File size and page limits do not
   bound decompression cost, extracted-text size, CPU time, or native parser memory.
   Parsing runs in-process; hostile-input process isolation is not implemented.

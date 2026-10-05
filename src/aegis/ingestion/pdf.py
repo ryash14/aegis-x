@@ -16,6 +16,8 @@ from .models import (
     IngestionLimits,
     PageStatus,
 )
+from .normalization import normalize_layout
+from .normalization_models import NormalizationConfig
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +28,8 @@ def ingest_pdf(
     limits: IngestionLimits | None = None,
     include_layout: bool = False,
     layout_config: LayoutConfig | None = None,
+    include_normalized: bool = False,
+    normalization_config: NormalizationConfig | None = None,
 ) -> ExtractedDocument:
     """Extract PDF text without OCR, network calls, or persistent writes.
 
@@ -72,9 +76,20 @@ def ingest_pdf(
                 status = PageStatus.TEXT
                 if not text.strip():
                     status = PageStatus.IMAGE_ONLY if page.get_image_info() else PageStatus.NO_TEXT
-                layout = extract_layout(page, selected_layout_config) if include_layout else None
+                layout = (
+                    extract_layout(page, selected_layout_config)
+                    if include_layout or include_normalized
+                    else None
+                )
+                normalized = (
+                    normalize_layout(layout, normalization_config)
+                    if include_normalized and layout
+                    else None
+                )
                 pages.append(
-                    ExtractedPage(number, text, page.rect.width, page.rect.height, status, layout)
+                    ExtractedPage(
+                        number, text, page.rect.width, page.rect.height, status, layout, normalized
+                    )
                 )
             if not any(page.status == PageStatus.TEXT for page in pages):
                 raise IngestionError(

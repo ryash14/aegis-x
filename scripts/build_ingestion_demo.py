@@ -12,7 +12,13 @@ from uuid import uuid4
 
 import pymupdf
 
-from aegis.ingestion import IngestionError, IngestionLimits, ingest_pdf
+from aegis.ingestion import (
+    IngestionError,
+    IngestionLimits,
+    NormalizationConfig,
+    ingest_pdf,
+    normalize_layout,
+)
 from aegis.ingestion.layout import extract_layout
 from aegis.ingestion.layout_models import LayoutConfig
 
@@ -69,16 +75,28 @@ def export_document(source: Path, pages: tuple[int, ...], directory: Path, key: 
                 directory / image_name
             )
             layout = extract_layout(page, LayoutConfig())
+            normalized = normalize_layout(layout)
+            normalized_by_id = {block.block_id: block for block in normalized.blocks}
             geometry = []
             by_id = {block.block_id: block for block in layout.blocks}
             for index, identifier in enumerate(layout.reading_order, 1):
                 block = by_id[identifier]
+                cleaned = normalized_by_id[identifier]
                 rect = pymupdf.Rect(block.bbox) * page.rotation_matrix
                 geometry.append(
                     {
                         "number": index,
                         "block_id": identifier,
                         "text": block.text,
+                        "normalized_text": cleaned.text,
+                        "normalization_changes": len(cleaned.changes),
+                        "normalization_sources": sorted(
+                            {
+                                source.block_id
+                                for mapping in cleaned.mappings
+                                for source in mapping.sources
+                            }
+                        ),
                         "bbox": list(block.bbox),
                         "display_box": [
                             rect.x0 / page.rect.width * 100,
@@ -98,6 +116,8 @@ def export_document(source: Path, pages: tuple[int, ...], directory: Path, key: 
                     "layout_text": layout.text,
                     "blocks": geometry,
                     "layout": asdict(layout),
+                    "normalized": asdict(normalized),
+                    "normalized_text": normalized.text,
                     "rotation": page.rotation,
                     "warnings": list(layout.warnings),
                 }
@@ -140,11 +160,15 @@ def main() -> int:
         documents.append(document)
         print(f"{source.name}: {document['status']}", flush=True)
     run = {
-        "schema_version": 1,
+        "schema_version": 2,
         "id": identifier,
         "created_at": datetime.now(UTC).isoformat(),
         "parser_version": pymupdf.VersionBind,
         "layout_algorithm": "xy-cut-v1",
+        "normalization_algorithm": "conservative-v1",
+        "normalization_config": asdict(NormalizationConfig()),
+        "layout_config": asdict(LayoutConfig()),
+        "experiments": ["baseline", "layout", "normalized"],
         "documents": documents,
         "peak_rss_mib": round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024, 2),
         "scope": "Sample pages; full-document baseline, sample-page geometry and rasterization",

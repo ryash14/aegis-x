@@ -9,6 +9,8 @@ from .models import (
     IngestionLimits,
     PageStatus,
 )
+from .normalization import normalize_layout
+from .normalization_models import NormalizationConfig, NormalizedPage, SourceSlice, TextMapping
 from .pdf import ingest_pdf
 
 __all__ = [
@@ -19,10 +21,15 @@ __all__ = [
     "IngestionError",
     "IngestionLimits",
     "LayoutConfig",
+    "NormalizationConfig",
+    "NormalizedPage",
     "PageLayout",
     "PageStatus",
     "TextBlock",
     "TextLine",
     "TextSpan",
+    "SourceSlice",
+    "TextMapping",
     "ingest_pdf",
+    "normalize_layout",
 ]
