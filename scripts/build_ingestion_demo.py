@@ -16,6 +16,8 @@ from aegis.ingestion import (
     IngestionError,
     IngestionLimits,
     NormalizationConfig,
+    OCRConfig,
+    extract_ocr,
     ingest_pdf,
     normalize_layout,
 )
@@ -44,7 +46,13 @@ def javascript(name: str, value: object) -> str:
     return f"window.{name} = {payload};\n"
 
 
-def export_document(source: Path, pages: tuple[int, ...], directory: Path, key: str) -> dict:
+def export_document(
+    source: Path,
+    pages: tuple[int, ...],
+    directory: Path,
+    key: str,
+    ocr_config: OCRConfig | None = None,
+) -> dict:
     with source.open("rb") as stream:
         snapshot = stream.read(IngestionLimits().max_file_bytes + 1)
     if len(snapshot) > IngestionLimits().max_file_bytes:
@@ -106,10 +114,51 @@ def export_document(source: Path, pages: tuple[int, ...], directory: Path, key: 
                         ],
                     }
                 )
+            ocr = None
+            ocr_error = None
+            ocr_blocks = []
+            if ocr_config and not page.get_text("text").strip():
+                try:
+                    ocr = extract_ocr(page, ocr_config)
+                    grouped = {}
+                    for word in ocr.words:
+                        grouped.setdefault((word.block, word.paragraph, word.line), []).append(word)
+                    for index, words in enumerate(grouped.values(), 1):
+                        bbox = pymupdf.Rect(words[0].bbox)
+                        for word in words[1:]:
+                            bbox |= pymupdf.Rect(word.bbox)
+                        rect = bbox * page.rotation_matrix
+                        ocr_blocks.append(
+                            {
+                                "number": index,
+                                "block_id": f"ocr-{index}",
+                                "text": " ".join(word.text for word in words),
+                                "confidence": round(
+                                    sum(word.confidence for word in words) / len(words), 1
+                                ),
+                                "low_confidence_words": sum(
+                                    word.confidence < ocr_config.low_confidence_threshold
+                                    for word in words
+                                ),
+                                "bbox": list(bbox),
+                                "display_box": [
+                                    rect.x0 / page.rect.width * 100,
+                                    rect.y0 / page.rect.height * 100,
+                                    rect.width / page.rect.width * 100,
+                                    rect.height / page.rect.height * 100,
+                                ],
+                            }
+                        )
+                except IngestionError as exc:
+                    ocr_error = {"code": exc.code, "message": str(exc)}
             record["pages"].append(
                 {
                     "number": number,
                     "image": image_name,
+                    "ocr": asdict(ocr) if ocr else None,
+                    "ocr_error": ocr_error,
+                    "ocr_blocks": ocr_blocks,
+                    "ocr_included": ocr_config is not None,
                     "baseline_text": baseline.pages[number - 1].text
                     if baseline
                     else page.get_text("text", sort=True),
@@ -122,6 +171,8 @@ def export_document(source: Path, pages: tuple[int, ...], directory: Path, key: 
                     "warnings": list(layout.warnings),
                 }
             )
+    if any(page.get("ocr") and page["ocr"]["text"] for page in record["pages"]):
+        record["status"] = "ocr_extracted" if not baseline else "extracted_with_ocr"
     record["parser_diagnostics"] = pymupdf.TOOLS.mupdf_warnings(reset=True)
     record["elapsed_seconds"] = round(time.perf_counter() - started, 3)
     return record
@@ -133,11 +184,25 @@ def main() -> int:
     parser.add_argument(
         "--pages", default="1", help="Comma-separated physical page numbers with --source"
     )
+    parser.add_argument(
+        "--ocr", action="store_true", help="Add offline OCR to sampled textless pages"
+    )
+    parser.add_argument("--ocr-dpi", type=int, default=200)
+    parser.add_argument("--ocr-language", default="eng")
     args = parser.parse_args()
+    ocr_config = OCRConfig(dpi=args.ocr_dpi, language=args.ocr_language) if args.ocr else None
     identifier = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid4().hex[:6]
     directory = OUTPUT / "runs" / identifier
     directory.mkdir(parents=True)
     sources = [(CORPUS / path, pages) for path, pages in SAMPLES.items()]
+    if args.ocr:
+        sources = [(path, (1,)) for path in sorted((CORPUS / "docling/ocr").glob("*.pdf"))]
+        sources.extend(
+            [
+                (CORPUS / "reports/nasa-systems-engineering-handbook.pdf", (11,)),
+                (CORPUS / "docling/pdf_password/2206.01062_pg3.pdf", (1,)),
+            ]
+        )
     if args.source:
         sources = [
             (
@@ -148,7 +213,7 @@ def main() -> int:
     documents = []
     for index, (source, pages) in enumerate(sources):
         try:
-            document = export_document(source, pages, directory, f"document-{index}")
+            document = export_document(source, pages, directory, f"document-{index}", ocr_config)
         except (OSError, RuntimeError, ValueError) as exc:
             document = {
                 "name": source.name,
@@ -168,7 +233,8 @@ def main() -> int:
         "normalization_algorithm": "conservative-v1",
         "normalization_config": asdict(NormalizationConfig()),
         "layout_config": asdict(LayoutConfig()),
-        "experiments": ["baseline", "layout", "normalized"],
+        "experiments": ["baseline", "layout", "normalized"] + (["ocr"] if args.ocr else []),
+        "ocr_config": asdict(ocr_config) if ocr_config else None,
         "documents": documents,
         "peak_rss_mib": round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024, 2),
         "scope": "Sample pages; full-document baseline, sample-page geometry and rasterization",

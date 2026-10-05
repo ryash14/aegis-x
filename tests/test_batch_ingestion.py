@@ -3,6 +3,7 @@
 import fcntl
 import json
 import subprocess
+import sys
 from pathlib import Path
 
 import pymupdf
@@ -99,8 +100,14 @@ def test_changed_source_is_not_written(tmp_path: Path) -> None:
 
 
 def test_native_crash_becomes_a_failed_job(monkeypatch: pytest.MonkeyPatch) -> None:
+    original = subprocess.Popen
     monkeypatch.setattr(
-        subprocess, "run", lambda *args, **kwargs: subprocess.CompletedProcess([], -11)
+        subprocess,
+        "Popen",
+        lambda args, **kwargs: original(
+            [sys.executable, "-c", "import os,signal; os.kill(os.getpid(),signal.SIGTERM)"],
+            **kwargs,
+        ),
     )
     assert (
         _process("source", "identity", "output", "pipeline", BatchConfig())["error_code"]
@@ -121,3 +128,32 @@ def test_output_lock_prevents_concurrent_coordinators(tmp_path: Path) -> None:
 def test_invalid_configuration(kwargs: dict) -> None:
     with pytest.raises(ValueError):
         BatchConfig(**kwargs)
+
+
+def test_timeout_kills_child_processes_and_cleans_rasters(tmp_path, monkeypatch):
+    import time
+
+    original = subprocess.Popen
+    marker = tmp_path / "orphan-finished"
+    # Simulate a worker that starts a long-running OCR child and creates a raster.
+    child_script = f"import pathlib,time;time.sleep(0.5);pathlib.Path({str(marker)!r}).touch()"
+    script = (
+        "import os, pathlib, subprocess, sys, time; "
+        "root=pathlib.Path(os.environ['AEGIS_OCR_TEMP_ROOT']); "
+        "(root/'raster.png').write_bytes(b'private'); "
+        "subprocess.Popen([sys.executable, '-c', "
+        f"{child_script!r}]); "
+        "print(str(root), flush=True); time.sleep(10)"
+    )
+    directories = []
+
+    def spawn(args, **kwargs):
+        directories.append(Path(kwargs["env"]["AEGIS_OCR_TEMP_ROOT"]))
+        return original([sys.executable, "-c", script], **kwargs)
+
+    monkeypatch.setattr(subprocess, "Popen", spawn)
+    result = _process("source", "id", "output", "pipeline", BatchConfig(timeout_seconds=0.15))
+    assert result["error_code"] == "timeout"
+    time.sleep(0.6)
+    assert not marker.exists()
+    assert directories and not directories[0].exists()

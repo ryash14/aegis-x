@@ -5,11 +5,13 @@ import sys
 
 from .batch import BatchConfig, _worker
 from .models import IngestionLimits
+from .ocr_models import OCRConfig
 
 
 def main() -> None:
     request = json.load(sys.stdin)
     settings = request["config"]
+    settings["ocr"] = OCRConfig(**settings["ocr"])
     settings["limits"] = IngestionLimits(**settings["limits"])
     result = _worker(
         request["source"],

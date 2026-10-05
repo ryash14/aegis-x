@@ -1,8 +1,8 @@
 # Ingestion experiments
 
 Open `docs/experiments.html` directly in a browser. The workspace is separate
-from the application and uses the existing project environment; no server or
-additional dependencies are required.
+from the application and uses the existing project environment; no server
+is required. OCR additionally needs local Tesseract and language data.
 
 ## Compare experiments
 
@@ -13,6 +13,8 @@ additional dependencies are required.
   Ligatures expand, discretionary soft hyphens join adjacent wrapped lines,
   trailing whitespace is trimmed, and geometrically supported drop caps move
   to the body text. Hard hyphens, internal spacing, units, headers, and footers remain.
+- **Local OCR:** offline recognition for sampled textless pages, with orientation
+  correction, line overlays, word confidence, and separate native text.
 - **Saved run:** earlier snapshots remain available. Changing runs does not rebuild
   or overwrite previous extraction results.
 - **Document / sample page:** choose an exported physical PDF page. Click a source
@@ -23,13 +25,15 @@ ordering keeps the left column together before the right column. The drop-cap
 `T` remains a separate native line in the layout experiment. The normalization
 experiment maps it into `This handbook` while retaining both source blocks.
 Click the repaired paragraph to highlight its body and drop-cap source regions.
-Scanned PDFs show source images alongside the explicit missing-text error.
+Scanned PDFs show a missing-text error in native extraction modes; OCR runs
+add recognized text separately.
 Encrypted documents show the rejection without attempting password recovery.
 
 ## Build another snapshot
 
 ```bash
 uv run --locked python scripts/build_ingestion_demo.py
+uv run --locked python scripts/build_ingestion_demo.py --ocr
 uv run --locked python scripts/build_ingestion_demo.py --source data/test-corpus/reports/nasa-systems-engineering-handbook.pdf --pages 11,12
 ```
 

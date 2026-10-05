@@ -5,6 +5,7 @@ from enum import StrEnum
 
 from .layout_models import PageLayout
 from .normalization_models import NormalizedPage
+from .ocr_models import OCRPage
 
 
 class PageStatus(StrEnum):
@@ -43,6 +44,8 @@ class ExtractedPage:
     status: PageStatus
     layout: PageLayout | None = None
     normalized: NormalizedPage | None = None
+    ocr: OCRPage | None = None
+    warnings: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)

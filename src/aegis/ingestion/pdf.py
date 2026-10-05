@@ -18,6 +18,8 @@ from .models import (
 )
 from .normalization import normalize_layout
 from .normalization_models import NormalizationConfig
+from .ocr import engine_identity, extract_ocr
+from .ocr_models import OCRConfig
 
 logger = logging.getLogger(__name__)
 
@@ -30,8 +32,10 @@ def ingest_pdf(
     layout_config: LayoutConfig | None = None,
     include_normalized: bool = False,
     normalization_config: NormalizationConfig | None = None,
+    include_ocr: bool = False,
+    ocr_config: OCRConfig | None = None,
 ) -> ExtractedDocument:
-    """Extract PDF text without OCR, network calls, or persistent writes.
+    """Extract native PDF text with optional offline OCR for pages without native text.
 
     Pages use one-based physical PDF numbering. Image-only detection is a
     heuristic, not a diagnosis of scanning. Mixed documents retain every page.
@@ -71,6 +75,7 @@ def ingest_pdf(
         try:
             metadata = document.metadata or {}
             pages = []
+            engine = None
             for number, page in enumerate(document, start=1):
                 text = page.get_text("text", sort=True)
                 status = PageStatus.TEXT
@@ -86,12 +91,31 @@ def ingest_pdf(
                     if include_normalized and layout
                     else None
                 )
+                warnings = ()
+                if include_ocr and text.strip() and page.get_image_info():
+                    warnings = (
+                        "Native text present; OCR skipped; image regions may contain unread text",
+                    )
+                ocr = None
+                if include_ocr and not text.strip():
+                    selected_ocr_config = ocr_config or OCRConfig()
+                    if engine is None:
+                        engine = engine_identity(selected_ocr_config)
+                    ocr = extract_ocr(page, selected_ocr_config, engine=engine)
                 pages.append(
                     ExtractedPage(
-                        number, text, page.rect.width, page.rect.height, status, layout, normalized
+                        number,
+                        text,
+                        page.rect.width,
+                        page.rect.height,
+                        status,
+                        layout,
+                        normalized,
+                        ocr,
+                        warnings,
                     )
                 )
-            if not any(page.status == PageStatus.TEXT for page in pages):
+            if not any(page.text.strip() or (page.ocr and page.ocr.text.strip()) for page in pages):
                 raise IngestionError(
                     ErrorCode.NO_EXTRACTABLE_TEXT,
                     "PDF has no extractable text; image-only pages may require OCR",

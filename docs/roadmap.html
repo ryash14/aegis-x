@@ -736,8 +736,8 @@
         <div class="next-icon" aria-hidden="true">↗</div>
         <div>
           <div class="eyebrow">Next checkpoint</div>
-          <strong>Add local OCR for scanned pages</strong>
-          <p>Measure scan quality and preserve OCR provenance.</p>
+          <strong>Add structure-aware chunking</strong>
+          <p>Split document sections while retaining source references.</p>
         </div>
       </div>
       <section aria-label="Phase roadmap">
@@ -822,7 +822,7 @@
           title: "Production document intelligence pipeline",
           status: "current",
           summary:
-            "PDF extraction, normalization and resumable batches verified. DOCX verified. OCR and chunking remain.",
+            "PDF extraction, normalization and resumable batches verified. DOCX and local OCR verified. Chunking and phase validation remain.",
           description:
             "Turn local documents into inspectable structured records with traceable source locations. Complete this phase before adding retrieval.",
           tasks: [
@@ -868,12 +868,12 @@
             ],
             [
               "Local OCR for image-only pages",
-              "next",
-              "Select an OCR approach after measuring scan fixtures; preserve extraction method and warnings.",
+              "done",
+              "Offline Tesseract, orientation correction, confidence, word boxes and resumable OCR batches.",
             ],
             [
               "Structure-aware chunking",
-              "planned",
+              "next",
               "Respect document sections and preserve document/page/block provenance.",
             ],
             [
@@ -887,9 +887,11 @@
               "Explain interfaces and limitations; verify visually and commit each completed logical unit.",
             ],
           ],
-          gate: "Open. PDF, corpus, layout and experiment foundation committed. OCR, chunking and phase validation remain before retrieval.",
+          gate: "Open. PDF, corpus, layout and experiment foundation committed. Chunking and phase validation remain before retrieval.",
           links: [
             ["Text experiments", "experiments.html"],
+            ["OCR experiments", "experiments.html#ocr"],
+            ["DOCX inspection", "docx.html"],
             ["Batch runs", "batches.html"],
             ["Corpus guide", "test-corpus.md"],
             [

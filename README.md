@@ -16,7 +16,8 @@ behavior. The production frontend remains a separate later phase.
 
 Phase 0 is complete. Phase 1 implements local PDF ingestion, provenance,
 optional text geometry and geometric reading order. A local experiment workspace
-preserves baseline, layout, and normalized text comparisons across saved runs.
+preserves baseline, layout, normalized text and local OCR comparisons across saved runs.
+DOCX extraction and resumable PDF batches are also implemented.
 Retrieval, reasoning, inference, and user interfaces are not implemented.
 Air-gapped operation is a design goal, not a validated capability at this stage.
 
@@ -82,8 +83,8 @@ except IngestionError as error:
 
 Flow: validate the local file and size, read a bounded snapshot, hash those exact
 bytes with SHA-256, open them with PyMuPDF, enforce encryption/page rules, then
-return immutable records. There are no network calls or persistent writes in
-the ingestion function. The application logger records the hash and page count,
+return immutable records. There are no network calls in the ingestion function;
+opt-in OCR uses private temporary rasters that are deleted after recognition. The application logger records the hash and page count,
 not the source path or extracted text. PyMuPDF can emit its own diagnostics.
 
 `document_id` identifies exact bytes, not semantic equivalence. Renaming a file
@@ -94,7 +95,9 @@ PyMuPDF repaired the PDF. Dates remain raw PDF metadata strings, not trusted tim
 Pages preserve one-based physical PDF numbering, text, and dimensions in points.
 Each page is marked `text`, `image_only`, or `no_text`. Mixed documents retain
 all pages; image-only detection is a heuristic and does not identify every scan.
-If the entire PDF lacks extractable text, ingestion raises `no_extractable_text`.
+Without OCR, a PDF lacking native text raises `no_extractable_text`.
+With `include_ocr=True`, recognized text can satisfy this requirement; native page
+text and status remain unchanged, with OCR stored separately in `page.ocr`.
 
 Errors expose stable codes: `source_unreadable`, `invalid_pdf`, `encrypted_pdf`,
 `limit_exceeded`, `no_extractable_text`, and `extraction_failed`.
@@ -107,10 +110,11 @@ Input must start with a PDF header; filename extensions do not determine format.
 - Text uses PyMuPDF's sorted extraction; complex columns, tables, and equations
   do not have guaranteed reading order or preserved structure.
 - Optional layout blocks, conservative normalization, and resumable PDF batch
-  ingestion are available. DOCX structure extraction is available separately. No OCR, chunking, or retrieval yet.
+  ingestion are available. DOCX structure extraction is available separately. Optional local PDF OCR is available. No chunking or retrieval yet.
 - Default limits are 100 MiB and 2,000 pages. File size and page limits do not
   bound decompression cost, extracted-text size, CPU time, or native parser memory.
-  Parsing runs in-process; hostile-input process isolation is not implemented.
+  The Python API runs in-process. Batch jobs isolate parser/OCR subprocesses and
+  enforce timeouts; this is not a hardened hostile-input sandbox.
 - Tests generate local fixtures; they do not establish quality on real research PDFs.
 
 PyMuPDF is offered under AGPL or a commercial license; this repository has not
@@ -165,3 +169,19 @@ list numbering reconstruction, equation layout, or header/footer extraction.
 Equation tokens and inserted tracked text are retained; deleted text is excluded.
 Merged cells retain markers rather than reconstructing a visual grid. PDF batch
 jobs remain PDF-only; DOCX uses `ingest_docx` and the separate snapshot builder.
+
+### Local PDF OCR
+
+[Open OCR experiments](docs/experiments.html#ocr): choose the latest OCR run, then
+compare Baseline with Local OCR on `ocr_test.pdf` and its rotated variants. Click a
+recognized line to highlight its source region; expand details for low-confidence words.
+
+```python
+from aegis.ingestion import ingest_pdf
+
+document = ingest_pdf("data/test-corpus/docling/ocr/ocr_test.pdf", include_ocr=True)
+print(document.pages[0].ocr.text)
+```
+
+`--mode ocr` adds fallback OCR to resumable PDF batches. See [OCR behavior and
+measurements](docs/ocr.md) for setup, limits, and testing your own scans.

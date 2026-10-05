@@ -12,9 +12,16 @@ from .models import (
 )
 from .normalization import normalize_layout
 from .normalization_models import NormalizationConfig, NormalizedPage, SourceSlice, TextMapping
+from .ocr import extract_ocr
+from .ocr_models import OCRConfig, OCREngine, OCRPage, OCRWord
 from .pdf import ingest_pdf
 
 __all__ = [
+    "OCRConfig",
+    "OCREngine",
+    "OCRPage",
+    "OCRWord",
+    "extract_ocr",
     "DocxBlock",
     "DocxImage",
     "DocxLimits",

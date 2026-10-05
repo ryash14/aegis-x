@@ -1,5 +1,5 @@
 /* Render saved artifacts only; document text is inserted using textContent. */
-let mode = 'normalized';
+let mode = location.hash === '#ocr' ? 'ocr' : 'normalized';
 let runData = null;
 let runEntry = null;
 let documentIndex = 0;
@@ -12,6 +12,7 @@ const modes = {
   baseline: ['Baseline text', 'Sorted plain text, preserved unchanged.'],
   layout: ['Layout & reading order', 'Native blocks in geometric reading order.'],
   normalized: ['Normalized text', 'Conservative edits with original source ranges.'],
+  ocr: ['Local OCR', 'Offline recognition · native text preserved separately.'],
 };
 function node(tag, className, text) {
   const item = document.createElement(tag);
@@ -83,7 +84,7 @@ function renderBlock(block, normalized) {
   row.tabIndex = 0;
   row.dataset.block = block.block_id;
   const title = node('div', 'block-title');
-  title.append(node('span', '', 'Block ' + block.number), node('span', '', normalized ? block.normalization_changes + ' edits' : 'ID ' + block.block_id));
+  title.append(node('span', '', 'Block ' + block.number), node('span', '', mode === 'ocr' ? 'Mean confidence ' + block.confidence + ' · ' + block.low_confidence_words + ' low' : normalized ? block.normalization_changes + ' edits' : 'ID ' + block.block_id));
   row.append(title, node('p', '', text));
   for (const event of ['mouseenter', 'focus', 'click']) row.addEventListener(event, () => activate(block.block_id, sources));
   $('output').append(row);
@@ -107,7 +108,8 @@ function render() {
   const doc = runData.documents[documentIndex];
   const page = doc.pages[pageIndex];
   const normalized = mode === 'normalized';
-  const unavailable = normalized && page && !page.normalized;
+  const ocrMode = mode === 'ocr';
+  const unavailable = page && (normalized && !page.normalized || ocrMode && !page.ocr_included);
   $('heading').textContent = modes[mode][0];
   $('description').textContent = modes[mode][1];
   document.querySelectorAll('[data-mode]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.mode === mode)));
@@ -124,15 +126,26 @@ function render() {
     fact.append(document.createTextNode(label + ' '), node('strong', '', String(value)));
     $('facts').append(fact);
   }
-  $('warning').textContent = doc.error || (unavailable ? 'Normalization was not included in this saved run.' : normalized ? 'Hard hyphens and internal spacing preserved. Headers remain.' : mode === 'layout' ? 'Heuristic order · Tables, equations and drop caps need review.' : 'Columns may interleave.');
+  $('warning').textContent = ocrMode ? (!page ? doc.error || 'No preview.' : unavailable ? 'OCR was not included in this saved run.' : page.ocr_error ? page.ocr_error.message : page.ocr ? page.ocr.warnings.join(' · ') : 'Native text present; OCR skipped. Mixed image regions may still need OCR.') : doc.error || (unavailable ? 'Normalization was not included in this saved run.' : normalized ? 'Hard hyphens and internal spacing preserved. Headers remain.' : mode === 'layout' ? 'Heuristic order · Tables, equations and drop caps need review.' : 'Columns may interleave.');
   $('overlay').replaceChildren();
   $('output').replaceChildren();
   $('provenance').replaceChildren();
   detailsLine('Source', doc.source);
   detailsLine('SHA-256', doc.document_id || 'Unavailable');
   detailsLine('Run', runData.id);
-  detailsLine('Method', normalized ? runData.normalization_algorithm || 'Unavailable in this run' : mode === 'layout' ? runData.layout_algorithm : 'PyMuPDF text / sort=True');
+  detailsLine('Method', ocrMode ? page?.ocr?.method || 'Not run' : normalized ? runData.normalization_algorithm || 'Unavailable in this run' : mode === 'layout' ? runData.layout_algorithm : 'PyMuPDF text / sort=True');
   detailsLine('Scope', 'Sample pages only. Earlier runs retain their original outputs.');
+  if (ocrMode && page?.ocr) {
+    const ocr = page.ocr;
+    detailsLine('Engine', ocr.engine.version);
+    detailsLine('Settings', `${ocr.config.language} · ${ocr.config.dpi} DPI · ${ocr.elapsed_seconds} s`);
+    detailsLine('Orientation', `${ocr.rotation_correction}° correction · confidence ${ocr.orientation_confidence ?? 'unavailable'}`);
+    detailsLine('Coordinates', 'Unrotated PDF points; word offsets reference OCR text, separate from native text.');
+    for (const [language, hash] of ocr.engine.model_sha256) detailsLine('Model ' + language, hash);
+    for (const word of ocr.words.filter(word => word.confidence < ocr.config.low_confidence_threshold)) {
+      detailsLine('Review', `${word.text} · confidence ${word.confidence.toFixed(1)} · [${word.output_start}, ${word.output_end})`);
+    }
+  }
   if (doc.parser_diagnostics) detailsLine('Parser diagnostics', doc.parser_diagnostics);
   $('page-image').hidden = !page;
   $('source-empty').hidden = !!page;
@@ -148,10 +161,15 @@ function render() {
   $('image').alt = doc.name + ', physical page ' + page.number;
   $('source-scroll').scrollTop = 0;
   $('output').scrollTop = 0;
-  $('output-header').firstChild.textContent = mode === 'baseline' ? 'Sorted text ' : normalized ? 'Normalized blocks ' : 'Ordered blocks ';
+  $('output-header').firstChild.textContent = mode === 'baseline' ? 'Sorted text ' : ocrMode ? 'Recognized lines ' : normalized ? 'Normalized blocks ' : 'Ordered blocks ';
   if (mode === 'baseline') {
     $('output-label').textContent = page.baseline_text.length.toLocaleString() + ' characters';
     $('output').append(node('pre', 'baseline', page.baseline_text || 'No extractable text.'));
+  } else if (ocrMode) {
+    const blocks = page.ocr_blocks || [];
+    $('output-label').textContent = page.ocr ? page.ocr.words.length + ' words' : 'Not run';
+    if (!blocks.length) $('output').append(node('div', 'empty', unavailable ? 'Choose an OCR run.' : page.ocr_error?.message || (page.ocr ? 'No text recognized.' : 'Native text present; inspect Baseline or Normalized.')));
+    blocks.forEach(block => { renderBlock(block, false); renderOverlay(block); });
   } else if (unavailable) {
     $('output-label').textContent = 'Unavailable';
     $('output').append(node('div', 'empty', 'Choose a newer run to inspect normalized text.'));

@@ -8,6 +8,8 @@ The command accepts one local file or recursively discovers `.pdf` files in a
 directory, including uppercase extensions. Other formats are ignored. The default
 mode saves baseline text. Use `--mode layout` or `--mode normalized` to include
 geometry and normalization; these modes cost more CPU, memory, and output space.
+`--mode ocr` also includes normalization and fallback OCR for textless pages;
+[OCR settings](ocr.md) and engine/model hashes become part of pipeline identity.
 
 ## Storage and resume
 
@@ -38,6 +40,8 @@ updates. A Linux file lock prevents competing coordinators in the same output.
 
 At most `--workers` jobs are in flight. Each PDF runs in its own subprocess;
 timeouts and native parser crashes become failed jobs while other files continue.
+A job timeout kills the worker process group, including OCR children; the
+coordinator cleans that job’s temporary rasters.
 `--timeout-seconds` defaults to 300. The source is rechecked against its scheduled
 content hash before a record is saved. Pipeline code is also checked in the worker.
 
@@ -50,7 +54,8 @@ queue or an established million-document scalability claim.
 
 Exit codes: `0` means every discovered document succeeded or was reused; `1` means
 one or more new/remembered failures; `2` means invalid configuration or coordinator
-failure. Scan/encryption fixtures therefore intentionally yield exit code `1`.
+failure. Without OCR, scan/encryption fixtures intentionally yield exit code `1`. With
+OCR, the current scans succeed and encryption remains an explicit failure.
 
 Open `docs/batches.html` for runs under the default output directory. The viewer
 shows successful records, reused results, and explicit errors. Custom output paths

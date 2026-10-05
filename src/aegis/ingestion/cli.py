@@ -4,7 +4,9 @@ import argparse
 from pathlib import Path
 
 from .batch import BatchConfig, run_batch
+from .errors import IngestionError
 from .models import IngestionLimits
+from .ocr_models import OCRConfig
 
 
 def main() -> int:
@@ -13,12 +15,17 @@ def main() -> int:
     )
     parser.add_argument("source", type=Path)
     parser.add_argument("--output", type=Path, default=Path("data/ingestion"))
-    parser.add_argument("--mode", choices=("text", "layout", "normalized"), default="text")
+    parser.add_argument("--mode", choices=("text", "layout", "normalized", "ocr"), default="text")
     parser.add_argument("--workers", type=int, default=1)
     parser.add_argument("--retry-failed", action="store_true")
     parser.add_argument("--max-file-mib", type=int, default=100)
     parser.add_argument("--max-pages", type=int, default=2000)
     parser.add_argument("--timeout-seconds", type=float, default=300)
+    parser.add_argument("--ocr-language", default="eng")
+    parser.add_argument("--ocr-dpi", type=int, default=200)
+    parser.add_argument("--ocr-max-pixels", type=int, default=20_000_000)
+    parser.add_argument("--ocr-timeout-seconds", type=float, default=60)
+    parser.add_argument("--no-ocr-orientation", action="store_true")
     args = parser.parse_args()
     try:
         config = BatchConfig(
@@ -27,9 +34,16 @@ def main() -> int:
             args.retry_failed,
             IngestionLimits(args.max_file_mib * 1024 * 1024, args.max_pages),
             args.timeout_seconds,
+            OCRConfig(
+                language=args.ocr_language,
+                dpi=args.ocr_dpi,
+                max_pixels=args.ocr_max_pixels,
+                timeout_seconds=args.ocr_timeout_seconds,
+                detect_orientation=not args.no_ocr_orientation,
+            ),
         )
         report = run_batch(args.source, args.output, config)
-    except (OSError, RuntimeError, ValueError) as exc:
+    except (IngestionError, OSError, RuntimeError, ValueError) as exc:
         parser.exit(2, f"Ingestion failed: {exc}\n")
     print(
         f"{report['total']} PDFs · {report['succeeded']} new · "

@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 import resource
+import signal
 import subprocess
 import sys
 import tempfile
@@ -22,6 +23,8 @@ from .job_store import JobStore
 from .layout_models import LayoutConfig
 from .models import IngestionLimits
 from .normalization_models import NormalizationConfig
+from .ocr import engine_identity
+from .ocr_models import OCRConfig
 from .pdf import ingest_pdf
 
 
@@ -72,10 +75,11 @@ class BatchConfig:
     retry_failed: bool = False
     limits: IngestionLimits = IngestionLimits()
     timeout_seconds: float = 300
+    ocr: OCRConfig = OCRConfig()
 
     def __post_init__(self) -> None:
-        if self.mode not in {"text", "layout", "normalized"}:
-            raise ValueError("Mode must be text, layout, or normalized")
+        if self.mode not in {"text", "layout", "normalized", "ocr"}:
+            raise ValueError("Mode must be text, layout, normalized, or ocr")
         if self.workers < 1:
             raise ValueError("Workers must be positive")
         if self.timeout_seconds <= 0:
@@ -96,6 +100,9 @@ def _pipeline_id(config: BatchConfig) -> str:
         "layout": asdict(LayoutConfig()),
         "normalization": asdict(NormalizationConfig()),
     }
+    if config.mode == "ocr":
+        settings["ocr"] = asdict(config.ocr)
+        settings["ocr_engine"] = asdict(engine_identity(config.ocr))
     return hashlib.sha256(json.dumps(settings, sort_keys=True).encode()).hexdigest()
 
 
@@ -115,7 +122,9 @@ def _worker(
             source,
             limits=config.limits,
             include_layout=config.mode == "layout",
-            include_normalized=config.mode == "normalized",
+            include_normalized=config.mode in {"normalized", "ocr"},
+            include_ocr=config.mode == "ocr",
+            ocr_config=config.ocr,
         )
         if document.document_id != content_sha256:
             return {
@@ -125,7 +134,7 @@ def _worker(
                 "error": "Source changed during ingestion; rerun",
             }
         record = {"schema_version": 1, "pipeline_id": pipeline, "document": asdict(document)}
-        if config.mode == "normalized":
+        if config.mode in {"normalized", "ocr"}:
             for saved, page in zip(record["document"]["pages"], document.pages, strict=True):
                 saved["normalized"]["text"] = page.normalized.text
                 saved["normalized"]["page_mappings"] = [
@@ -155,17 +164,37 @@ def _process(source: str, identity: str, output: str, pipeline: str, config: Bat
         "pipeline": pipeline,
         "config": asdict(config),
     }
-    try:
-        result = subprocess.run(
+    # Each worker and its OCR children share a process group, so a job timeout
+    # terminates the entire job rather than leaving recognition processes running.
+    with (
+        tempfile.TemporaryDirectory(prefix="aegis-job-") as temporary,
+        subprocess.Popen(
             [sys.executable, "-m", "aegis.ingestion.worker"],
-            input=json.dumps(request),
-            capture_output=True,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True,
-            timeout=config.timeout_seconds,
-            check=False,
-        )
-    except subprocess.TimeoutExpired:
-        return {**job, "status": "failed", "error_code": "timeout", "error": "PDF job timed out"}
+            start_new_session=True,
+            env={**os.environ, "AEGIS_OCR_TEMP_ROOT": temporary},
+        ) as process,
+    ):
+        try:
+            stdout, stderr = process.communicate(
+                json.dumps(request), timeout=config.timeout_seconds
+            )
+        except subprocess.TimeoutExpired:
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            process.communicate()
+            return {
+                **job,
+                "status": "failed",
+                "error_code": "timeout",
+                "error": "PDF job timed out",
+            }
+        result = subprocess.CompletedProcess(process.args, process.returncode, stdout, stderr)
     if result.returncode:
         return {
             **job,
