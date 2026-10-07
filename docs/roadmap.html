@@ -718,8 +718,8 @@
       <div class="stats" aria-label="Current project status">
         <div class="stat">
           <div class="stat-label">Current phase</div>
-          <div class="stat-value">01 · Complete</div>
-          <div class="stat-sub">Document intelligence · reviewed and verified</div>
+          <div class="stat-value">02 · Retrieval</div>
+          <div class="stat-sub">Phase 1 complete · sparse baseline verified</div>
         </div>
         <div class="stat">
           <div class="stat-label">Local experimental corpus</div>
@@ -735,9 +735,9 @@
       <div class="next">
         <div class="next-icon" aria-hidden="true">↗</div>
         <div>
-          <div class="eyebrow">Next session</div>
-          <strong>Phase 2 · sparse retrieval baseline</strong>
-          <p>Phase 1 complete. Resume retrieval tomorrow.</p>
+          <div class="eyebrow">Next checkpoint</div>
+          <strong>Local embeddings and dense index</strong>
+          <p>Sparse retrieval verified. Next: evaluate local embeddings.</p>
         </div>
       </div>
       <section aria-label="Phase roadmap">
@@ -894,7 +894,7 @@
               "Revision guide, measured limits, real Chrome checks, automated verification and Git checkpoint.",
             ],
           ],
-          gate: "Complete. Ingestion, OCR, chunking and live inspection verified; quality and workload evidence documented. Phase 2 deferred to next session.",
+          gate: "Complete. Ingestion, OCR, chunking and live inspection verified; quality and workload evidence documented. Phase 2 may proceed with source-traceable chunks.",
           links: [
             ["Live workspace", "http://127.0.0.1:8765"],
             ["Phase 1 revision", "phase1-review.md"],
@@ -922,19 +922,19 @@
         {
           id: 2,
           title: "Multi-index retrieval engine",
-          status: "planned",
-          summary: "Dense + sparse retrieval, filters, fusion, and reranking.",
+          status: "current",
+          summary: "Persistent BM25 baseline and live evidence search verified. Dense, hybrid and reranking remain.",
           description:
             "Retrieve relevant evidence from structured chunks and compare each retrieval method with measured baselines.",
           tasks: [
             [
               "Sparse retrieval baseline",
-              "planned",
-              "BM25 with deterministic source and metadata filtering.",
+              "done",
+              "SQLite FTS5 BM25, literal any/all queries, deterministic source/page/format/kind filters and source links.",
             ],
             [
               "Local embeddings and dense index",
-              "planned",
+              "next",
               "Choose the model and index from corpus size, hardware, and offline requirements.",
             ],
             [
@@ -954,6 +954,7 @@
             ],
           ],
           gate: "Requires Phase 1 completion. Verified retrieval baselines, documented tradeoffs, and a commit before Phase 3.",
+          links: [["Evidence search", "retrieval.html"], ["Sparse baseline", "retrieval.md"]],
         },
         {
           id: 3,

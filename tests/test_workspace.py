@@ -226,3 +226,21 @@ def test_nonfinite_or_nonpositive_timeout_rejected(tmp_path, timeout):
     with pytest.raises(ValueError, match="limits"):
         Workspace(tmp_path / "storage", timeout=timeout)
     assert not (tmp_path / "storage").exists()
+
+
+def test_live_retrieval_refresh_sources_and_removed_job_visibility(app):
+    server, workspace, base = app
+    job = upload(server, base, pdf_bytes(), "engine.pdf")
+    wait(workspace, [job["id"]])
+    headers = {"X-Aegis-Token": server.token}
+    indexed = json.load(request(base, "/api/retrieval/index", payload=b"", headers=headers))
+    assert indexed["documents"] == 1 and indexed["chunks"] == 2
+    results = json.load(request(base, "/api/search?q=pressure&mode=all"))["results"]
+    assert results[0]["job_id"] == job["id"] and results[0]["pages"] == [1]
+    assert results[0]["chunk"]["mappings"][0]["sources"][0]["page"] == 1
+    unchanged = json.load(request(base, "/api/retrieval/index", payload=b"", headers=headers))
+    assert unchanged["updated_documents"] == 0
+    workspace.remove(job["id"])
+    assert not json.load(request(base, "/api/search?q=pressure"))["results"]
+    pruned = json.load(request(base, "/api/retrieval/index", payload=b"", headers=headers))
+    assert pruned["chunks"] == 0

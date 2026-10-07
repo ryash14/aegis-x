@@ -1,0 +1,16 @@
+{
+  "status": "passed",
+  "created_at": "2026-10-07T02:27:40.706Z",
+  "checks": [
+    "Multi-file upload, isolated encrypted failure, file sizes and live job completion",
+    "BM25 indexing, ranked evidence, source mappings and exact source-page navigation",
+    "DOCX tables, chunks and XML source highlighting",
+    "Rotated OCR, confidence, source boxes and separate native text",
+    "Large PDF, page navigation, all methods, configurable chunks and original PDF viewer",
+    "Desktop and mobile layout",
+    "Persistent library, explicit retry and soft removal",
+    "Unsupported upload rejected without a job"
+  ],
+  "console_errors": [],
+  "external_http_requests": []
+}

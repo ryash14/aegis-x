@@ -16,7 +16,8 @@ behavior. The production frontend remains a separate later phase.
 
 **Phase 1 complete:** PDF/DOCX extraction, local PDF OCR, normalization,
 source-traceable chunking, persistent jobs, and a live inspection website.
-Phase 2 retrieval starts next session. Production multi-user deployment remains
+Phase 2 is underway: persistent BM25 search and a live evidence-search demo are verified.
+Dense embeddings, hybrid search and reranking remain. Production multi-user deployment remains
 in later phases. See [the Phase 1 revision](docs/phase1-review.md).
 
 ## Open the application
@@ -30,6 +31,12 @@ Open **http://127.0.0.1:8765**. Upload multiple PDFs/DOCX files; inspect file si
 source previews, extraction methods, OCR confidence, and chunks with source
 highlights. The library survives restarts. **Try sample documents** uses the downloaded
 local corpus. See [workspace usage and checks](docs/workspace.md).
+
+## Evidence search
+
+Open http://127.0.0.1:8765/docs/retrieval.html and click **Refresh index**.
+Search keywords across ready document chunks; inspect scores and source mappings,
+then follow a result to its original document/page. See [sparse retrieval](docs/retrieval.md).
 
 ## Development setup
 

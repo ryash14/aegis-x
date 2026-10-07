@@ -11,6 +11,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, quote, unquote, urlsplit
 
 from aegis.chunking import ChunkConfig
+from aegis.retrieval import SparseIndex
 
 from .service import Workspace
 
@@ -139,6 +140,23 @@ class Handler(BaseHTTPRequestHandler):
                         ),
                     }
                 )
+            elif path == "/api/retrieval":
+                self.json(SparseIndex(workspace.db).stats())
+            elif path == "/api/search":
+                self.json(
+                    {
+                        "results": SparseIndex(workspace.db).search(
+                            query.get("q", [""])[0],
+                            limit=int(query.get("limit", [10])[0]),
+                            job_id=query.get("job_id", [None])[0],
+                            format=query.get("format", [None])[0] or None,
+                            kind=query.get("kind", [None])[0] or None,
+                            page=int(query["page"][0]) if query.get("page", [""])[0] else None,
+                            mode=query.get("mode", ["any"])[0],
+                            live_workspace=True,
+                        )
+                    }
+                )
             elif path == "/api/documents":
                 self.json(
                     workspace.list(
@@ -226,7 +244,9 @@ class Handler(BaseHTTPRequestHandler):
             self.guard(mutation=True)
             path = urlsplit(self.path).path
             workspace = self.server.workspace
-            if path == "/api/documents":
+            if path == "/api/retrieval/index":
+                self.json(SparseIndex(workspace.db).sync_workspace(workspace))
+            elif path == "/api/documents":
                 length = int(self.headers.get("Content-Length", "0"))
                 if length > workspace.max_file_bytes:
                     self.json({"error": "File exceeds workspace upload limit"}, 413)

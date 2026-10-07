@@ -1,7 +1,8 @@
 # Phase 1 revision — document intelligence
 
 Phase 1 is complete for PDF and DOCX ingestion, local PDF OCR, traceable chunking,
-persistent batches, and the live inspection workspace. Phase 2 starts next session.
+persistent batches, and the live inspection workspace. This review records the Phase 1 handoff. The [sparse retrieval baseline](retrieval.md)
+is now the first completed Phase 2 checkpoint.
 
 ## What we built and why
 
@@ -93,7 +94,7 @@ One worker still parses a complete bounded document. More workers increase memor
 pressure; more documents consume disk and queue time. The local workspace is an
 inspection tool, not the later production multi-user service.
 
-We now have source-traceable evidence units. Tomorrow, Phase 2 begins with sparse
+We now have source-traceable evidence units. Phase 2 begins with sparse
 retrieval over those chunks, followed by local embeddings, hybrid ranking,
 reranking, and reviewed retrieval metrics. No retrieval or model reasoning is
 implemented in Phase 1.
