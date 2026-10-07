@@ -396,3 +396,33 @@ its original offsets. Ordinary verbatim quotations remain supported and altered
 quotes remain rejected. Semantic support still requires review and is fallible.
 The support-review prompt avoids duplicating full quotations already present in
 the evidence, preserving the existing context and model-call budgets.
+
+
+### Chat shell, timing and retrieval scope — 8 October 2026
+
+The open-source Vercel Chatbot repository was inspected at revision
+`c2f8235e1f3ea903ad8b7f61447c4f74164b5c58` as a design reference
+(https://github.com/vercel/chatbot). AEGIS uses an independently implemented neutral
+chat shell, recent-history sidebar, collapsible navigation and compact composer,
+connected to the existing authenticated FastAPI backend. The upstream Next.js
+application and its hosted model gateway are not installed as app dependencies.
+
+Elapsed time begins at browser submission, includes queueing and retrieval, and
+stops when the terminal response reaches the browser. Reopened runs show recorded
+server duration explicitly rather than claiming to reproduce historical browser
+latency. Generation remains verified before display; tokens are not presented as
+accepted claims before citation and support checks finish.
+
+Chat now exposes a document selector. Its scope is authorized before enqueueing,
+saved in run configuration, applied to overview and ranked retrieval, and retained
+on retry. Scoped runs ignore processing/indexing activity outside their selected
+source. All-project mode remains explicit for comparisons. Ranked excerpts retain
+query-relevant text later in a chunk instead of always taking its first 600 characters.
+Dense embedding windows remain the fallback when no literal query terms occur.
+
+Answers currently use BM25 plus local BGE-small semantic retrieval fused by RRF,
+bounded excerpts (3,000 UTF-8 bytes total), and pinned local Qwen3:8b generation
+with exact reference resolution and a separate fallible support review. Generic
+overviews use opening passages. This is not exhaustive document understanding;
+Phase 4 requirements/revision intelligence and Phase 5 evaluation/release remain
+outstanding. A desktop shell can later reuse the frontend and local API.

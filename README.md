@@ -26,7 +26,9 @@ uv run --locked aegis-app serve
 
 Open http://127.0.0.1:8787, sign in, create a project and upload PDF/DOCX files.
 Use **Documents** to upload and inspect sources, **Chat** for cited answers and
-follow-ups, and **Search evidence** for retrieval filters. Technical details are
+follow-ups, and **Search evidence** for retrieval filters. Select a specific document
+in Chat to prevent mixing revisions; a live timer includes queueing through the
+validated response. Technical details are
 collapsed by default. Broad summaries use bounded opening passages, not an
 exhaustive review of every page.
 

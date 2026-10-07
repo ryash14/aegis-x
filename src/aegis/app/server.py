@@ -603,6 +603,7 @@ def create_app(settings=None):
                 body.get("mode", "answer"),
                 body.get("parent_id"),
                 body.get("retrieval", "hybrid"),
+                body.get("document_id"),
             )
         except BlockingIOError as exc:
             raise HTTPException(429, str(exc)) from exc
@@ -631,6 +632,7 @@ def create_app(settings=None):
                 existing["mode"],
                 existing["parent_id"],
                 existing["config"]["retrieval"],
+                existing["config"].get("document_id"),
             )
         except BlockingIOError as exc:
             raise HTTPException(429, str(exc)) from exc

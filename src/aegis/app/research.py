@@ -158,11 +158,11 @@ class Research:
                 "model_key": self.dense.encoder.key if self.dense else None,
             }
 
-    def overview(self, owner, project):
+    def overview(self, owner, project, *, document_id=None):
         """Use opening passages for broad summaries instead of ranking the word document."""
         hits = []
         with self.mutations:
-            documents = self.scope(owner, project)
+            documents = self.scope(owner, project, document_id=document_id)
             for identity, metadata in documents.items():
                 job = self.workspace.get(identity)
                 if job["status"] != "ready":

@@ -399,3 +399,35 @@ def test_source_selection_attaches_exact_saved_passage():
     assert citation["chunk_end"] == 17 + len(source["text"])
     proposal["claims"][0]["citations"][0]["quote"] = "@E002"
     assert not validate_answer(proposal, [source], ["What is the limit?"])["claims"]
+
+
+def test_research_document_scope_and_unauthorized_scope(research_app):
+    app, alice, bob, job = research_app
+    run = complete(
+        alice, start(alice, question="What is the document about?", document_id=job["id"])["id"]
+    )
+    assert run["status"] == "completed", run
+    assert run["config"]["document_id"] == job["id"]
+    assert run["evidence"]
+    assert all(item["document_id"] == job["id"] for item in run["evidence"])
+    assert run["trace"][0]["step"] == "overview"
+    bob.create_project()
+    status, _, _ = bob.request(
+        "/api/research",
+        method="POST",
+        body={"question": "Summarize", "document_id": job["id"], "retrieval": "sparse"},
+    )
+    assert status == 404
+
+
+def test_retrieved_excerpt_preserves_late_operating_limit():
+    from aegis.app.investigation import excerpt_start
+
+    text = (
+        "Background context. " * 60
+        + "\nController maximum operating temperature is 85 Celsius.\n"
+        + "Appendix. " * 50
+    )
+    start = excerpt_start(text, "What is the controller maximum operating temperature?")
+    assert start > 600
+    assert "temperature is 85 Celsius" in text[start : start + 600]

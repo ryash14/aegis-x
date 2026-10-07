@@ -32,6 +32,7 @@ async function refreshEvidenceStatus(project) {
   $('evidence-document').firstChild.value='';
   for(const item of status.sources){const option=node('option',item.name);option.value=item.id;$('evidence-document').append(option);}
   if([...$('evidence-document').options].some(item=>item.value===selected))$('evidence-document').value=selected;
+  const scope=$('research-document'),oldScope=scope.value;scope.replaceChildren(node('option','All project documents'));scope.firstChild.value='';for(const item of status.sources){if(item.status!=='ready')continue;const option=node('option',item.name);option.value=item.id;scope.append(option);}if([...scope.options].some(item=>item.value===oldScope))scope.value=oldScope;
   for(const option of $('evidence-mode').options)option.disabled=option.value!=='sparse'&&!status.dense_available;
   if(!status.dense_available){$('evidence-mode').value='sparse';if(!$('evidence-results').childNodes.length)$('evidence-status').textContent=status.model_error;}
 }
@@ -189,7 +190,7 @@ function renderProjects() {
 }
 async function chooseProject(identity) {
   if($('evidence-drawer').open)$('evidence-drawer').close();$('evidence-text').replaceChildren();
-  state.historyOffset=0;state.researchId=null;state.researchRun=null;state.chatRuns={};$('research-panel').classList.remove('has-conversation');state.researchBusy=false;state.researchSequence=(state.researchSequence||0)+1;
+  state.historyOffset=0;state.researchId=null;state.researchRun=null;state.chatRuns={};state.requestStarted=null;state.timerRun=null;state.requestFinished=null;$('research-timing').textContent='';$('research-panel').classList.remove('has-conversation');state.researchBusy=false;state.researchSequence=(state.researchSequence||0)+1;
   $('research-answer').replaceChildren();$('research-trace').replaceChildren();$('research-status').textContent='';
   for(const id of ['research-cancel','research-retry','research-followup','research-report'])$(id).hidden=true;
   $('evidence-results').replaceChildren(); $('evidence-status').textContent='Search the evidence in this project.';
@@ -239,6 +240,7 @@ async function refreshResearch(){
     const history=await api('/api/research?offset='+(state.historyOffset||0));if(project!==state.projectId||sequence!==state.researchSequence)return;
     $('research-newer').hidden=!(state.historyOffset||0);$('research-older').hidden=history.runs.length<20;
     $('research-history').replaceChildren(node('option','Choose a saved run'));$('research-history').firstChild.value='';
+    $('chat-history').replaceChildren(node('p','Recent chats','history-label'));for(const entry of history.runs){const button=node('button',entry.question,'history-item');button.dataset.run=entry.id;button.title=entry.question;button.onclick=()=>{state.researchId=entry.id;state.requestStarted=null;state.requestFinished=null;state.timerRun=null;state.researchSequence=(state.researchSequence||0)+1;showView('chat');refreshResearch();};$('chat-history').append(button);}
     for(const run of history.runs){const option=node('option',run.status+' · '+run.question.slice(0,90));option.value=run.id;$('research-history').append(option);}
     if(state.researchId){$('research-history').value=state.researchId;const run=await api('/api/research/'+state.researchId);if(project!==state.projectId||sequence!==state.researchSequence)return;state.chatRuns=state.chatRuns||{};let ancestor=run;for(let depth=0;ancestor.parent_id&&depth<16;depth++){const parent=state.chatRuns[ancestor.parent_id]||await api('/api/research/'+ancestor.parent_id);state.chatRuns[parent.id]=parent;ancestor=parent;}renderResearch(run);}
   }catch(error){if(project===state.projectId){$('research-status').textContent=error.message;if(error.status===404){state.researchId=null;state.researchRun=null;$('research-answer').replaceChildren();$('research-trace').replaceChildren();for(const id of ['research-cancel','research-retry','research-followup','research-report'])$(id).hidden=true;}}}finally{state.researchBusy=false;}
@@ -247,7 +249,7 @@ async function showEvidence(run,id,quote){
   try{const source=await api('/api/research/'+run.id+'/evidence/'+id);$('evidence-title').textContent=source.id+' · '+source.name;$('evidence-metadata').textContent=source.role+' · '+source.revision+' · '+(source.pages.length?'Page '+source.pages.join(', '):'DOCX')+' · SHA-256 '+source.document_sha256;$('evidence-text').replaceChildren();const at=source.text.indexOf(quote||'');if(quote&&at>=0){$('evidence-text').append(document.createTextNode(source.text.slice(0,at)),node('mark',quote),document.createTextNode(source.text.slice(at+quote.length)));}else $('evidence-text').textContent=source.text;$('evidence-source').href=source.source_url;$('evidence-mappings').textContent=JSON.stringify({excerpt_range:[source.chunk_start,source.chunk_end],mappings:source.mappings,warnings:source.warnings},null,2);$('evidence-drawer').showModal();}catch(error){toast(error.message);}
 }
 function renderResearch(run){
-  state.researchRun=run;$('research-panel').classList.add('has-conversation');$('research-status').textContent=run.status==='completed'?'':run.status==='running'?'Reading your documents…':run.status==='queued'?'Waiting to start…':run.error||run.status;
+  state.researchRun=run;if(state.timerRun!==run.id){state.timerRun=run.id;if(!state.requestStarted){state.timerHistorical=true;const stop=['completed','failed','cancelled'].includes(run.status)?run.updated_at*1000:Date.now();state.requestStarted=performance.now()-Math.max(0,stop-run.created_at*1000);}state.requestFinished=null;}if(['completed','failed','cancelled'].includes(run.status)&&state.requestFinished===null){state.requestFinished=performance.now();}updateResearchTimer();$('research-panel').classList.add('has-conversation');$('research-status').textContent=run.status==='completed'?'':run.status==='running'?({retrieving:'Finding relevant passages…',planning:'Planning the investigation…',evidence_saved:'Preparing source evidence…',generating:'Writing your answer…',checking_support:'Checking the answer against its sources…'}[run.stage]||'Reading your documents…'):run.status==='queued'?'Waiting to start…':run.error||run.status;
   const terminal=['completed','failed','cancelled'].includes(run.status);$('research-cancel').hidden=terminal;$('research-retry').hidden=!['failed','cancelled'].includes(run.status);$('research-followup').hidden=run.status!=='completed';$('research-report').hidden=run.status!=='completed';$('research-report').href='/api/research/'+run.id+'/report';
   state.chatRuns=state.chatRuns||{};state.chatRuns[run.id]=run;
   $('research-answer').replaceChildren();$('research-trace').replaceChildren();
@@ -264,16 +266,16 @@ function renderResearch(run){
   const details=node('details',undefined,'answer-details');details.append(node('summary','Answer checks and limits'));for(const reason of [...run.result.unresolved,...(run.result.limitations||[])])details.append(node('p',reason,'research-unresolved'));$('research-answer').append(details);
 }
 async function startResearch(parent=null){
-  const project=state.projectId;$('research-submit').disabled=true;$('research-status').textContent='Queueing local research…';
-  try{const run=await api('/api/research',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:$('research-question').value,mode:$('research-mode').value,retrieval:$('research-retrieval').value,parent_id:parent})});if(project!==state.projectId)return;state.historyOffset=0;state.researchId=run.id;state.researchSequence=(state.researchSequence||0)+1;renderResearch(run);$('research-question').value='';await refreshResearch();}catch(error){if(project===state.projectId)$('research-status').textContent=error.message;}finally{$('research-submit').disabled=false;}
+  const project=state.projectId;state.requestStarted=performance.now();state.timerHistorical=false;state.timerRun=null;state.requestFinished=null;$('research-timing').textContent='0.0 s · Starting';$('research-submit').disabled=true;$('research-status').textContent='Queueing local research…';
+  try{const run=await api('/api/research',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:$('research-question').value,mode:$('research-mode').value,retrieval:$('research-retrieval').value,parent_id:parent,document_id:$('research-document').value||null})});if(project!==state.projectId)return;state.historyOffset=0;state.researchId=run.id;state.researchSequence=(state.researchSequence||0)+1;renderResearch(run);$('research-question').value='';await refreshResearch();}catch(error){if(project===state.projectId){state.requestFinished=performance.now();updateResearchTimer();$('research-status').textContent=error.message;}}finally{$('research-submit').disabled=false;}
 }
 $('research-form').onsubmit=event=>{event.preventDefault();startResearch(state.researchRun?.status==='completed'?state.researchId:null);};
 $('research-followup').onclick=()=>{if(!$('research-question').reportValidity())return;startResearch(state.researchId);};
-$('research-history').onchange=async event=>{state.researchId=event.target.value||null;state.researchSequence=(state.researchSequence||0)+1;if(state.researchId)await refreshResearch();else{$('research-answer').replaceChildren();$('research-trace').replaceChildren();$('research-status').textContent='';for(const id of ['research-cancel','research-retry','research-followup','research-report'])$(id).hidden=true;}};
+$('research-history').onchange=async event=>{state.researchId=event.target.value||null;state.requestStarted=null;state.timerRun=null;state.requestFinished=null;state.researchSequence=(state.researchSequence||0)+1;if(state.researchId)await refreshResearch();else{$('research-answer').replaceChildren();$('research-trace').replaceChildren();$('research-status').textContent='';for(const id of ['research-cancel','research-retry','research-followup','research-report'])$(id).hidden=true;}};
 $('research-older').onclick=()=>{state.historyOffset=(state.historyOffset||0)+20;refreshResearch();};
 $('research-newer').onclick=()=>{state.historyOffset=Math.max(0,(state.historyOffset||0)-20);refreshResearch();};
 $('research-cancel').onclick=async()=>{try{renderResearch(await api('/api/research/'+state.researchId+'/cancel',{method:'POST'}));}catch(error){toast(error.message);}};
-$('research-retry').onclick=async()=>{try{const run=await api('/api/research/'+state.researchId+'/retry',{method:'POST'});state.historyOffset=0;state.researchId=run.id;state.researchSequence=(state.researchSequence||0)+1;renderResearch(run);}catch(error){toast(error.message);}};
+$('research-retry').onclick=async()=>{state.requestStarted=performance.now();state.timerHistorical=false;state.requestFinished=null;state.timerRun=null;try{const run=await api('/api/research/'+state.researchId+'/retry',{method:'POST'});state.historyOffset=0;state.researchId=run.id;state.researchSequence=(state.researchSequence||0)+1;renderResearch(run);}catch(error){toast(error.message);}};
 $('evidence-close').onclick=()=>$('evidence-drawer').close();
 setInterval(refreshResearch,1200);
 $('logout').onclick=async()=>{try{await api('/api/auth/logout',{method:'POST'});location.replace('/login');}catch(error){toast(error.message);}};
@@ -285,12 +287,20 @@ function showView(view){
   document.body.dataset.view=view;
   $('research-panel').hidden=view!=='chat';
   $('evidence-search').hidden=view!=='search';
-  $('document-library').hidden=view!=='documents';
+  $('document-library').hidden=view!=='documents';$('chat-history').hidden=view!=='chat';
   for(const id of ['add','settings-button'])$(id).hidden=view!=='documents';
   document.querySelectorAll('button[data-view]').forEach(button=>{button.classList.toggle('active',button.dataset.view===view);});
   history.replaceState(null,'',location.pathname+location.search+'#'+view);
 }
 document.querySelectorAll('button[data-view]').forEach(button=>button.onclick=()=>showView(button.dataset.view));
-$('new-chat').onclick=()=>{state.researchId=null;state.researchRun=null;$('research-panel').classList.remove('has-conversation');$('research-answer').replaceChildren();$('research-question').value='';$('research-status').textContent='';for(const id of ['research-cancel','research-retry','research-followup','research-report'])$(id).hidden=true;showView('chat');$('research-question').focus();};
+$('new-chat').onclick=()=>{state.researchId=null;state.researchRun=null;state.requestStarted=null;state.requestFinished=null;$('research-timing').textContent='';$('research-panel').classList.remove('has-conversation');$('research-answer').replaceChildren();$('research-question').value='';$('research-status').textContent='';for(const id of ['research-cancel','research-retry','research-followup','research-report'])$(id).hidden=true;showView('chat');$('research-question').focus();};
 $('research-question').addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();$('research-form').requestSubmit();}});
 showView(new URLSearchParams(location.search).has('document')?'documents':location.hash.slice(1)||'chat');
+
+function updateResearchTimer(){if(!state.requestStarted)return;const seconds=((state.requestFinished??performance.now())-state.requestStarted)/1000;$('research-timing').textContent=seconds.toFixed(1)+' s'+(state.requestFinished!==null?(state.timerHistorical?' · Recorded run time':' · Total response time'):' · Elapsed');}
+setInterval(updateResearchTimer,100);
+$('sidebar-toggle').onclick=()=>{document.body.classList.toggle('sidebar-collapsed');$('sidebar-toggle').setAttribute('aria-expanded',String(!document.body.classList.contains('sidebar-collapsed')));};
+
+const mobileLayout=matchMedia('(max-width:760px)');function adaptSidebar(){document.body.classList.toggle('sidebar-collapsed',mobileLayout.matches);$('sidebar-toggle').setAttribute('aria-expanded',String(!mobileLayout.matches));}mobileLayout.addEventListener('change',adaptSidebar);adaptSidebar();
+
+$('chat-history').before(document.querySelector('.saved-research'));

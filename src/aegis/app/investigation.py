@@ -4,6 +4,7 @@ import hashlib
 import json
 import logging
 import os
+import re
 import signal
 import subprocess
 import sys
@@ -12,7 +13,7 @@ import time
 from uuid import uuid4
 
 LOG = logging.getLogger(__name__)
-PROMPT_VERSION = "research-v1"
+PROMPT_VERSION = "research-v2"
 MODEL_DIGEST = "500a1f067a9f782620b40bee6f7b0c89e17ae61f686b92c24933e4ca4b2b8b41"
 TERMINAL = {"completed", "failed", "cancelled"}
 
@@ -130,6 +131,32 @@ class LocalModel:
                     stream.close()
 
 
+def excerpt_start(text, query, fallback=0, width=600):
+    """Preserve the matching sentence when a retrieved chunk exceeds model space."""
+    from aegis.app.research import lexical_query
+
+    terms = set(lexical_query(query).casefold().split())
+    if not terms:
+        return fallback
+    matches = list(
+        re.finditer(r"\b(?:" + "|".join(re.escape(term) for term in terms) + r")\b", text, re.I)
+    )
+    if not matches:
+        return fallback
+    starts = {max(0, match.start() - 100) for match in matches}
+
+    def score(start):
+        found = {
+            match.group().casefold() for match in matches if start <= match.start() < start + width
+        }
+        return len(found), -abs(start - fallback), -start
+
+    start = max(starts, key=score)
+    # Begin at an intact line where possible; offsets always refer to original text.
+    boundary = text.rfind("\n", 0, start)
+    return boundary + 1 if 0 <= start - boundary <= 100 else start
+
+
 def validate_answer(value, evidence, subquestions):
     """No invented IDs or altered quotes enter the accepted answer."""
     available = {item["id"]: item for item in evidence}
@@ -238,7 +265,16 @@ class Investigations:
         self.stop.set()
         self.thread.join()
 
-    def create(self, owner, project, question, mode="answer", parent=None, retrieval="hybrid"):
+    def create(
+        self,
+        owner,
+        project,
+        question,
+        mode="answer",
+        parent=None,
+        retrieval="hybrid",
+        document_id=None,
+    ):
         question = self.store.text(question, "Question", 1600, multiline=True)
         if len(question.encode()) > 1800:
             raise ValueError("Question exceeds the 1,800-byte context limit")
@@ -254,6 +290,7 @@ class Investigations:
             "model": self.model.model,
             "model_digest": self.model.digest,
             "retrieval": retrieval,
+            "document_id": document_id,
             "timeout_seconds": self.timeout,
             "max_model_calls": 3,
             "max_retrieval_calls": 4,
@@ -263,6 +300,10 @@ class Investigations:
         }
         with self.mutations:
             self.store.project(owner, project)
+            if document_id is not None:
+                if not isinstance(document_id, str):
+                    raise ValueError("Invalid document scope")
+                self.store.document(owner, document_id, project)
             if parent:
                 previous = self.store.run(owner, parent)
                 if previous["project_id"] != project:
@@ -398,6 +439,13 @@ class Investigations:
             questions = [question]
             config = run["config"]
             status = self.research.status(owner, run["project_id"])
+            if config.get("document_id"):
+                status["sources"] = [
+                    source for source in status["sources"] if source["id"] == config["document_id"]
+                ]
+                status["documents"] = [
+                    item for item in status["documents"] if item["job_id"] == config["document_id"]
+                ]
             if any(source["status"] in {"queued", "processing"} for source in status["sources"]):
                 raise ValueError("Documents are still processing; retry after they are ready")
             if (
@@ -416,7 +464,13 @@ class Investigations:
             def retrieve(query, number):
                 check()
                 report = self.research.search(
-                    owner, run["project_id"], query, mode=config["retrieval"], limit=8, budget=24000
+                    owner,
+                    run["project_id"],
+                    query,
+                    mode=config["retrieval"],
+                    limit=8,
+                    budget=24000,
+                    document_id=config.get("document_id"),
                 )
                 trace.append(
                     {
@@ -431,14 +485,16 @@ class Investigations:
                 )
                 retrieved.extend(report["results"])
 
-            import re
-
             if re.search(
                 r"\b(what is (?:the|this) document about|summari[sz]e|overview|main topic)\b",
                 question,
                 re.I,
             ):
-                retrieved.extend(self.research.overview(owner, run["project_id"]))
+                retrieved.extend(
+                    self.research.overview(
+                        owner, run["project_id"], document_id=config.get("document_id")
+                    )
+                )
                 trace.append(
                     {
                         "step": "overview",
@@ -495,6 +551,8 @@ class Investigations:
                 seen.add(key)
                 chunk = hit["chunk"]
                 start = hit.get("window", {}).get("char_start", 0)
+                if not any(step["step"] == "overview" for step in trace):
+                    start = excerpt_start(chunk["text"], " ".join(questions), start)
                 text = chunk["text"][start : start + 600]
                 while len(text.encode()) > 750:
                     text = text[:-1]
