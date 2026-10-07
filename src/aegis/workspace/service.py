@@ -6,6 +6,7 @@ import json
 import math
 import os
 import selectors
+import shutil
 import signal
 import sqlite3
 import subprocess
@@ -44,6 +45,8 @@ class Workspace:
         self.timeout = timeout
         self.workers = workers
         self.closed = threading.Event()
+        self.control = threading.RLock()
+        self.processes = {}
         self.wake = threading.Event()
         self.preview_slots = threading.BoundedSemaphore(2)
         self.db = self.root / "workspace.sqlite3"
@@ -65,6 +68,11 @@ class Workspace:
                 "UPDATE documents SET status='queued',stage='queued',done=0,total=0 "
                 "WHERE status='processing'"
             )
+            deleting = database.execute(
+                "SELECT id FROM documents WHERE status='deleting'"
+            ).fetchall()
+        for row in deleting:
+            self._purge_storage(row["id"])
         implementation = hashlib.sha256()
         for directory in ("workspace", "ingestion", "chunking"):
             for path in sorted((Path(__file__).parent.parent / directory).glob("*.py")):
@@ -91,6 +99,7 @@ class Workspace:
     @contextmanager
     def connection(self):
         database = sqlite3.connect(self.db, timeout=30)
+        database.execute("PRAGMA foreign_keys=ON")
         database.row_factory = sqlite3.Row
         try:
             with database:
@@ -116,14 +125,16 @@ class Workspace:
             raise ValueError("Invalid job update")
         with self.connection() as database:
             database.execute(
-                "UPDATE documents SET " + ",".join(f"{key}=?" for key in values) + " WHERE id=?",
+                "UPDATE documents SET "
+                + ",".join(f"{key}=?" for key in values)
+                + " WHERE id=? AND status NOT IN ('removed','deleting')",
                 [*values.values(), identity],
             )
 
     def get(self, identity):
         with self.connection() as database:
             row = database.execute("SELECT * FROM documents WHERE id=?", (identity,)).fetchone()
-        if not row or row["status"] == "removed":
+        if not row or row["status"] in {"removed", "deleting"}:
             raise KeyError("Document not found")
         result = dict(row)
         result["config"] = json.loads(result["config"])
@@ -131,7 +142,7 @@ class Workspace:
 
     def list(self, *, offset=0, limit=50, query=""):
         with self.connection() as database:
-            where = "status!='removed' AND instr(lower(name),lower(?))>0"
+            where = "status NOT IN ('removed','deleting') AND instr(lower(name),lower(?))>0"
             rows = database.execute(
                 f"SELECT * FROM documents WHERE {where} "
                 "ORDER BY created_at DESC,id LIMIT ? OFFSET ?",
@@ -142,7 +153,8 @@ class Workspace:
             ).fetchone()[0]
             states = dict(
                 database.execute(
-                    "SELECT status,count(*) FROM documents WHERE status!='removed' GROUP BY status"
+                    "SELECT status,count(*) FROM documents "
+                    "WHERE status NOT IN ('removed','deleting') GROUP BY status"
                 )
             )
         documents = [dict(row) for row in rows]
@@ -245,6 +257,59 @@ class Workspace:
             pass
         process.wait(timeout=5)
 
+    @contextmanager
+    def worker_process(self, identity, temporary):
+        with self.control:
+            self.get(identity)
+            process = subprocess.Popen(
+                [sys.executable, "-m", "aegis.workspace.worker"],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                start_new_session=True,
+                env={**os.environ, "AEGIS_OCR_TEMP_ROOT": temporary},
+            )
+            self.processes[identity] = process
+        try:
+            with process:
+                yield process
+        finally:
+            with self.control:
+                self.processes.pop(identity, None)
+
+    def _purge_storage(self, identity):
+        directory = self.root / identity
+        if directory.exists():
+            shutil.rmtree(directory)
+        with self.connection() as database:
+            indexed = database.execute(
+                "SELECT 1 FROM sqlite_master WHERE name='retrieval_chunks'"
+            ).fetchone()
+            if indexed:
+                from aegis.retrieval.sparse import SparseIndex
+
+                SparseIndex._remove(database, identity)
+            database.execute("DELETE FROM documents WHERE id=?", (identity,))
+
+    def purge(self, identity):
+        """Stop an active parser and erase source, artifacts and indexed evidence.
+
+        The durable deleting state prevents a worker from reviving the job. A
+        crash between marking and unlinking is completed during the next startup.
+        Callers must authorize access before invoking this internal operation.
+        """
+        with self.control:
+            self.get(identity)
+            with self.connection() as database:
+                database.execute(
+                    "UPDATE documents SET status='deleting',stage='deleting' WHERE id=?",
+                    (identity,),
+                )
+            process = self.processes.get(identity)
+            if process is not None and process.poll() is None:
+                self.kill(process)
+            self._purge_storage(identity)
+
     def _execute(self, job):
         started = time.monotonic()
         directory = self.root / job["id"]
@@ -261,14 +326,7 @@ class Workspace:
         try:
             with (
                 tempfile.TemporaryDirectory(prefix="aegis-workspace-") as temporary,
-                subprocess.Popen(
-                    [sys.executable, "-m", "aegis.workspace.worker"],
-                    stdin=subprocess.PIPE,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
-                    start_new_session=True,
-                    env={**os.environ, "AEGIS_OCR_TEMP_ROOT": temporary},
-                ) as process,
+                self.worker_process(job["id"], temporary) as process,
             ):
                 process.stdin.write(json.dumps(request).encode())
                 process.stdin.close()

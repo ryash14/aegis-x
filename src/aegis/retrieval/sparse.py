@@ -34,6 +34,7 @@ class SparseIndex:
     @contextmanager
     def connection(self):
         database = sqlite3.connect(self.path, timeout=30)
+        database.execute("PRAGMA foreign_keys=ON")
         database.row_factory = sqlite3.Row
         try:
             with database:
@@ -139,6 +140,8 @@ class SparseIndex:
         page=None,
         mode="any",
         live_workspace=False,
+        job_ids=None,
+        section=None,
     ):
         if not isinstance(query, str) or len(query) > 2000:
             raise ValueError("Query must contain at most 2,000 characters")
@@ -162,6 +165,15 @@ class SparseIndex:
         if page is not None:
             conditions.append("EXISTS (SELECT 1 FROM json_each(c.pages) WHERE value=?)")
             parameters.append(page)
+        if job_ids is not None:
+            conditions.append("c.job_id IN (SELECT value FROM json_each(?))")
+            parameters.append(json.dumps(list(job_ids)))
+        if section:
+            conditions.append(
+                "EXISTS (SELECT 1 FROM json_each(c.payload,'$.headings') "
+                "WHERE instr(lower(json_extract(value,'$.text')),lower(?))>0)"
+            )
+            parameters.append(section)
         if live_workspace:
             conditions.append("c.job_id IN (SELECT id FROM documents WHERE status='ready')")
         parameters.append(limit)

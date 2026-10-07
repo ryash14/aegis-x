@@ -288,3 +288,13 @@ def test_runtime_validation_rejects_missing_and_invalid_fragments():
     corrupt = replace(chunks[0], text="X" + chunks[0].text[1:])
     with pytest.raises(ValueError, match="differs"):
         validate_document(document, (corrupt,), config)
+
+
+def test_short_heading_stays_with_oversized_paragraph_start():
+    document = docx(
+        [paragraph("Operating limits", 0, 1), paragraph("Requirement shall hold. " * 30, 1)]
+    )
+    chunks = verify_coverage(document, ChunkConfig(max_chars=120, overlap_chars=20))
+    assert chunks[0].text.startswith("Operating limits\n\nRequirement")
+    assert len(chunks[0].fragments) == 2
+    assert chunks[0].algorithm == "structure-v2"

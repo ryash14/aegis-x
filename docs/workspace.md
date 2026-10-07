@@ -1,3 +1,104 @@
+# Private application operations
+
+Phase 1 runs the authenticated app locally. All document processing and browser
+assets stay on the machine; generation and hybrid research are later phases.
+
+```bash
+uv sync --locked
+uv run --locked aegis-app user-add owner@aegis.local --name "Workspace owner"
+uv run --locked aegis-app serve
+```
+
+Open http://127.0.0.1:8787. Account provisioning prompts twice for a password
+of at least 12 characters. There is no public registration or default password.
+Use `aegis-app user-disable EMAIL` to disable an account and revoke its sessions.
+Use `aegis-app user-password EMAIL` to change a password and revoke existing sessions.
+Accounts named admin have the same project ownership restrictions as other users;
+account administration is performed through the local CLI.
+Provision additional accounts with `user-add`; each sees only their own projects.
+
+Create a project, optionally describe it, and upload PDFs/DOCX files. Upload settings
+include chunk size/overlap, revision and reference/baseline/candidate role. Revision
+labels can be edited afterward. Inspect native text, layout, normalization, local
+OCR, tables, source coordinates and traceable chunks. Extraction failures expose
+an explicit retry. Unsupported/encrypted files fail without interrupting other jobs.
+
+Document deletion permanently removes the original, extraction artifacts, job record
+and indexed evidence; it terminates an active parser. Project deletion removes all
+of its documents. Interrupted deletions finish at startup. Completed work and valid
+sessions persist across restart; interrupted processing returns to the queue.
+
+## Search project evidence
+
+Install the dense extra and verified embedding assets once:
+
+```bash
+uv sync --locked --extra dense
+uv run --locked --extra dense python scripts/fetch_embedding_model.py
+```
+
+Restart the app afterward. Search appears above the document inspector. Ready
+files index automatically; newly uploaded files may still be embedding. Choose
+Hybrid, Keyword or Semantic search, filter by document/revision/role/section/kind/
+format and open **Inspect exact source**. Surrounding evidence is limited to adjacent
+chunks with the same heading context and evidence kind. Context defaults to 12,000
+characters and never exceeds the requested 1,000–24,000 character budget. Scores
+are ranking signals, not confidence probabilities. No answer generation runs yet.
+
+The authenticated APIs are `GET /api/search` and `GET /api/search/status` with the
+selected project in `X-Aegis-Project`. Query parameters additionally support PDF
+page, 1–20 results and context budget. Missing model assets leave keyword search
+available; semantic/hybrid requests return a clear unavailable response.
+
+## Configuration
+
+Environment variables are read when the process starts; `.env` files are not loaded
+automatically. `--storage PATH` before the subcommand overrides the storage location.
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `AEGIS_STORAGE` | `data/app` | Private database, session key and document artifacts |
+| `AEGIS_EMBEDDING_MODEL` | `data/models/bge-small-en-v1.5` | Verified local BGE assets |
+| `AEGIS_WORKERS` | `2` | Shared parser workers across all projects |
+| `AEGIS_MAX_FILE_MIB` | `100` | Maximum individual upload size |
+| `AEGIS_JOB_TIMEOUT` | `300` | Parser time limit in seconds |
+| `AEGIS_SESSION_SECONDS` | `28800` | Absolute session lifetime in seconds |
+| `AEGIS_ALLOWED_HOSTS` | `127.0.0.1,localhost,::1` | Explicit accepted hostnames |
+| `AEGIS_COOKIE_SECURE` | `0` | Set `1` when served through HTTPS |
+| `AEGIS_PUBLIC_ORIGIN` | empty | Exact browser origin behind a TLS proxy |
+
+At most four uploads are streamed simultaneously; additional requests receive 429.
+Two parser subprocesses run by default, with lazy previews and paginated document/
+chunk lists. The PDF limit is 2,000 pages. These bounds limit concurrent work, but
+are not a hard RAM or total disk quota. Run one app process for each storage directory;
+multiple replicas and public hosting remain release work.
+
+Passwords use Argon2. Session tokens are stored as hashes, with HttpOnly/SameSite
+cookies, CSRF checks, expiry and login throttling. Every artifact route checks
+ownership. Secure cookies and an explicit trusted HTTPS origin are required for
+external serving. The CLI defaults to loopback. Ollama is not exposed by this app.
+
+Keep the entire storage directory, including `session.key`, private and persistent.
+Database schema version 1 is created transactionally; newer unsupported versions
+are refused. Backup/restore tooling and deployment verification belong to later phases.
+
+## Verify the private app
+
+```bash
+uv run --locked pytest -q
+npm run test:private
+```
+
+The browser check uses temporary accounts and storage, with local public fixtures
+from the existing test corpus. It writes screenshots and a report under ignored
+`data/evaluation/private-browser/`. Tests cover two-user HTTP isolation, PDF/DOCX/OCR,
+permanent deletion, active worker cancellation, persistence and restart recovery.
+
+---
+
+The following section documents the earlier development inspection server, which
+uses separate storage and different removal semantics.
+
 # Live document workspace
 
 Start from the repository root:
@@ -27,8 +128,7 @@ and orientation data; see [OCR setup](ocr.md).
    explicit retry. Removal hides a job; it does not erase its stored files.
 
 **Try sample documents** adds the local NASA handbook, a DOCX table fixture, and a rotated
-scan after [fetching the corpus](test-corpus.md). Earlier experiments remain linked
-from the sidebar, including saved baseline/layout/normalization/OCR runs.
+scan after [fetching the corpus](test-corpus.md). The live workspace replaces the retired standalone experiment viewers.
 
 ## Persistence and bounds
 

@@ -10,17 +10,9 @@ sudo apt-get install tesseract-ocr tesseract-ocr-eng tesseract-ocr-osd
 
 ## Try it
 
-Open `docs/experiments.html#ocr`, select the latest OCR run, and compare Baseline
-with Local OCR. The original PDF page remains visible, including its original
-rotation. Clicking a recognized line highlights the corresponding source area.
-Details show method, engine/model identities, rotation correction, and low-confidence words.
-Earlier runs remain available and explicitly report when OCR was not included.
-
-To add your own local scan as a saved experiment:
-
-```bash
-uv run --locked python scripts/build_ingestion_demo.py --ocr --source /path/to/scan.pdf --pages 1,2
-```
+Upload a scan in the live workspace at http://127.0.0.1:8765.
+Select the document and open **OCR** to inspect recognized text, confidence,
+and source boxes. The standalone snapshot viewer and builder have been retired.
 
 For resumable whole-document ingestion:
 

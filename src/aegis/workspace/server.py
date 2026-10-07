@@ -6,6 +6,7 @@ import json
 import mimetypes
 import re
 import secrets
+import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, quote, unquote, urlsplit
@@ -36,7 +37,24 @@ class LocalServer(ThreadingHTTPServer):
         self.workspace = workspace
         self.project = Path(project).resolve()
         self.token = secrets.token_urlsafe(32)
+        self.encoder = None
+        self.encoder_lock = threading.Lock()
+        self.dense_lock = threading.Lock()
         super().__init__(address, Handler)
+
+    def dense(self):
+        from aegis.retrieval.dense import DenseIndex
+        from aegis.retrieval.embeddings import LocalEncoder
+
+        with self.encoder_lock:
+            if self.encoder is None:
+                try:
+                    self.encoder = LocalEncoder(self.project / "data/models/bge-small-en-v1.5")
+                except (ImportError, OSError) as exc:
+                    raise ValueError(
+                        "Dense model unavailable; install dense extras and fetch model"
+                    ) from exc
+        return DenseIndex(self.workspace.db, self.encoder)
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -142,10 +160,16 @@ class Handler(BaseHTTPRequestHandler):
                 )
             elif path == "/api/retrieval":
                 self.json(SparseIndex(workspace.db).stats())
+            elif path == "/api/dense":
+                self.json(self.server.dense().stats())
             elif path == "/api/search":
+                method = query.get("method", ["sparse"])[0]
+                if method not in {"sparse", "dense"}:
+                    raise ValueError("Unknown retrieval method")
+                index = self.server.dense() if method == "dense" else SparseIndex(workspace.db)
                 self.json(
                     {
-                        "results": SparseIndex(workspace.db).search(
+                        "results": index.search(
                             query.get("q", [""])[0],
                             limit=int(query.get("limit", [10])[0]),
                             job_id=query.get("job_id", [None])[0],
@@ -208,6 +232,8 @@ class Handler(BaseHTTPRequestHandler):
                     raise KeyError("Route unavailable")
             elif path == "/":
                 self.file(STATIC / "index.html", "text/html; charset=utf-8")
+            elif path in {"/search", "/docs/retrieval.html"}:
+                self.file(STATIC / "search.html", "text/html; charset=utf-8")
             elif path in {"/app.js", "/style.css"}:
                 self.file(STATIC / path[1:])
             elif path in {"/assets/InterVariable.woff2", "/assets/Inter-LICENSE.txt"}:
@@ -216,9 +242,6 @@ class Handler(BaseHTTPRequestHandler):
                 relative = path.lstrip("/")
                 if path.startswith("/data/") and not relative.startswith(
                     (
-                        "data/experiments/",
-                        "data/docx-experiments/",
-                        "data/chunk-experiments/",
                         "data/ingestion/reports/",
                         "data/test-corpus/",
                     )
@@ -246,6 +269,16 @@ class Handler(BaseHTTPRequestHandler):
             workspace = self.server.workspace
             if path == "/api/retrieval/index":
                 self.json(SparseIndex(workspace.db).sync_workspace(workspace))
+            elif path == "/api/dense/index":
+                if not self.server.dense_lock.acquire(blocking=False):
+                    self.json({"error": "Dense indexing is already running"}, 409)
+                    return
+                try:
+                    index = self.server.dense()
+                    SparseIndex(workspace.db).sync_workspace(workspace)
+                    self.json(index.sync())
+                finally:
+                    self.server.dense_lock.release()
             elif path == "/api/documents":
                 length = int(self.headers.get("Content-Length", "0"))
                 if length > workspace.max_file_bytes:

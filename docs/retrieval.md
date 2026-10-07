@@ -1,12 +1,12 @@
 # Phase 2 — sparse retrieval baseline
 
-The first Phase 2 checkpoint is complete. Dense retrieval, hybrid fusion,
+The sparse and [dense retrieval](dense-retrieval.md) checkpoints are complete. Hybrid fusion,
 reranking, and reviewed retrieval-quality evaluation are still pending.
 
 ## Use it
 
 Start `uv run --locked aegis-workspace`, then open
-http://127.0.0.1:8765/docs/retrieval.html or **Evidence search** in the document
+http://127.0.0.1:8765/search or **Evidence search** in the document
 sidebar. Upload documents first; wait for their jobs to become ready.
 
 1. Click **Refresh index**. It indexes ready extraction snapshots and reuses
@@ -78,6 +78,5 @@ library; lexical matching can prioritize index entries or repeated headers/foote
 BM25 can miss evidence using synonyms or paraphrases. Query judgments and
 Recall@K/MRR/NDCG benchmarks are still a later Phase 2 checkpoint.
 
-Next: select and evaluate a local embedding model against this sparse baseline,
-then build dense retrieval before hybrid fusion and reranking. Phase 1's PDF table,
+Next: combine the verified sparse and dense baselines with rank fusion, then evaluate reranking. Phase 1's PDF table,
 equation, OCR and reading-order limitations still affect the evidence being searched.

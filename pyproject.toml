@@ -5,11 +5,23 @@ description = "Local-first intelligence and research system for sensitive techni
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [
+    "argon2-cffi>=25.1.0",
+    "fastapi>=0.142.2",
     "pymupdf>=1.28.2",
+    "python-multipart>=0.0.32",
+    "uvicorn>=0.35",
 ]
 
 [project.scripts]
 aegis-workspace = "aegis.workspace.server:main"
+aegis-app = "aegis.app.server:main"
+
+[project.optional-dependencies]
+dense = [
+    "numpy>=2.5.3",
+    "onnxruntime>=1.30.0",
+    "tokenizers>=0.23.2",
+]
 
 [build-system]
 requires = ["uv_build>=0.12.23,<0.13.0"]

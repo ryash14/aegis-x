@@ -1,30 +1,14 @@
 # Structure-aware chunking
 
 Chunks are bounded text records for later indexing. This step builds them from
-extraction records; embeddings, search, and retrieval are not implemented yet.
+extraction records for the implemented sparse and dense retrieval indexes.
 No new dependency or network service is used.
 
 ## Explore
 
-Open `docs/chunks.html`. The left panel highlights selected extraction-unit text;
-the right panel shows the assembled chunk. Repeated overlap is highlighted in the
-chunk. Expand provenance to inspect native PDF lines, OCR words, or DOCX paragraph
-text and their original offsets. PDF experiments remain available for page images.
-The source panel contains extracted units, not a rendered original document.
-
-Try the NASA handbook for normalized blocks, `word_tables.docx` for row boundaries,
-and rotated scans for OCR coordinates. Prev/next and chunk selection retain the
-saved output. Documents load individually; earlier snapshots remain available.
-
-Build another run from your own local documents:
-
-```bash
-uv run --locked python scripts/build_chunk_demo.py /path/to/report.pdf /path/to/report.docx
-```
-
-With no paths, the helper processes all local corpus PDFs and DOCX files. It saves
-per-document JSON/JS, verifies textual-unit coverage and source offsets, and appends
-run history under ignored `data/chunk-experiments/`. Private text stays local.
+Upload a PDF or DOCX in the live workspace at http://127.0.0.1:8765.
+Select a ready document and open **Chunks** to inspect text and source mappings.
+The standalone snapshot viewer and builder have been retired.
 
 ## Contract and boundaries
 
@@ -83,7 +67,7 @@ source path. Changed text, positions, or chunk settings change the IDs.
 
 Saved run `20261005T165947Z-b21308`: 24 inputs, 23 verified, encrypted PDF rejected.
 Across 23 extracted documents, 5,008 chunks cover 1,539,054 structural-unit characters.
-For every chunk, the helper checks bounded size, contiguous output mappings, source
+For every chunk, the validation pipeline checks bounded size, contiguous output mappings, source
 range validity, exact copied text, and complete unit coverage accounting for overlap.
 
 | Document | Chunks | Largest chunk |
@@ -96,3 +80,20 @@ Coverage does not prove semantic chunk quality, reading-order accuracy, or corre
 section inference. PDF tables and formulas remain extracted text, headers/footers
 remain, and heuristic headings can misclassify labels. Reviewing chunk usefulness
 and measuring growing workloads is the next Phase 1 checkpoint.
+
+
+## Private app refinements (structure-v2)
+
+Short headings stay with the first fragment of a following oversized paragraph
+when sufficient budget remains. Splits prefer sentence/newline boundaries and
+retain source ranges and overlap metadata. Character limits bound structural
+chunks; BGE separately uses 510-token overlapping embedding windows, so a long
+chunk is not silently truncated for embedding. Search retrieves ranked anchor
+chunks first and uses the remaining context budget for unique adjacent evidence
+with matching heading context and kind. Sources remain individually inspectable.
+
+This is deterministic structural chunking, not a learned semantic boundary model.
+PDF font headings remain heuristic; tables stay separate from narrative. Quality
+must be judged by retrieval and source coverage, not by making every chunk longer.
+Existing saved extractions retain their recorded version; upload again to apply
+the new chunker to an old source.

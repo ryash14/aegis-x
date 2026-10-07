@@ -57,9 +57,8 @@ one or more new/remembered failures; `2` means invalid configuration or coordina
 failure. Without OCR, scan/encryption fixtures intentionally yield exit code `1`. With
 OCR, the current scans succeed and encryption remains an explicit failure.
 
-Open `docs/batches.html` for runs under the default output directory. The viewer
-shows successful records, reused results, and explicit errors. Custom output paths
-still produce reports but are not automatically added to that viewer.
+Inspect saved batch results directly under `data/ingestion/reports/`.
+For interactive uploads and previews, use the live document workspace.
 
 Elapsed time includes source hashing, subprocess startup, parsing, record writing,
 and manifest updates, ending before report serialization. Peak worker RSS is the

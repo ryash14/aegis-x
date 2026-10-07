@@ -162,6 +162,17 @@ def test_host_guard_oversize_unsupported_and_path_routes(app):
     assert json.load(request(base, "/api/documents"))["total"] == 0
 
 
+def test_search_page_is_packaged_without_project_docs(app):
+    server, _, base = app
+    assert not (server.project / "docs").exists()
+    for route in ("/search", "/docs/retrieval.html"):
+        with request(base, route) as response:
+            assert response.headers["Content-Type"] == "text/html; charset=utf-8"
+            assert b"Find evidence." in response.read()
+    with request(base, "/") as response:
+        assert b'href="/search"' in response.read()
+
+
 def test_short_upload_never_becomes_a_job(app):
     _, workspace, _ = app
     with pytest.raises(ValueError, match="before the declared"):
@@ -244,3 +255,36 @@ def test_live_retrieval_refresh_sources_and_removed_job_visibility(app):
     assert not json.load(request(base, "/api/search?q=pressure"))["results"]
     pruned = json.load(request(base, "/api/retrieval/index", payload=b"", headers=headers))
     assert pruned["chunks"] == 0
+
+
+def test_dense_http_filters_and_live_removal(app):
+    np = pytest.importorskip("numpy")
+
+    class Encoder:
+        key, dimension = "http-test", 2
+
+        def passages(self, text):
+            vector = [1, 0] if "pressure" in text else [0, 1]
+            return (
+                [{"token_start": 0, "token_end": 1, "char_start": 0, "char_end": len(text)}],
+                np.array([vector], dtype="<f4"),
+            )
+
+        def query(self, text):
+            return np.array([1, 0], dtype="<f4")
+
+    server, workspace, base = app
+    server.encoder = Encoder()
+    job = upload(server, base, pdf_bytes(), "engine.pdf")
+    wait(workspace, [job["id"]])
+    indexed = json.load(
+        request(base, "/api/dense/index", payload=b"", headers={"X-Aegis-Token": server.token})
+    )
+    assert indexed["chunks"] == 2
+    hits = json.load(request(base, "/api/search?q=force&method=dense"))["results"]
+    assert hits[0]["pages"] == [1] and hits[0]["score"] == 1
+    assert json.load(request(base, "/api/search?q=force&method=dense&page=2"))["results"][0][
+        "pages"
+    ] == [2]
+    workspace.remove(job["id"])
+    assert json.load(request(base, "/api/search?q=force&method=dense"))["results"] == []

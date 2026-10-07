@@ -1,6 +1,9 @@
-# Phase 1 revision — document intelligence
+# Historical ingestion review — document intelligence
 
-Phase 1 is complete for PDF and DOCX ingestion, local PDF OCR, traceable chunking,
+This records the earlier ingestion milestone. The current five-phase product plan
+and acceptance status are in [architecture](architecture.md).
+
+The ingestion milestone is complete for PDF and DOCX ingestion, local PDF OCR, traceable chunking,
 persistent batches, and the live inspection workspace. This review records the Phase 1 handoff. The [sparse retrieval baseline](retrieval.md)
 is now the first completed Phase 2 checkpoint.
 

@@ -5,7 +5,7 @@ on:
 permissions:
   contents: read
 jobs:
-  phase1:
+  verification:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -16,7 +16,7 @@ jobs:
           python-version: '3.12'
       - name: Install local OCR engine
         run: sudo apt-get update && sudo apt-get install -y tesseract-ocr tesseract-ocr-eng tesseract-ocr-osd
-      - run: uv sync --locked
+      - run: uv sync --locked --extra dense
       - run: uv run --locked pytest
       - run: uv run --locked ruff check .
       - run: uv run --locked ruff format --check .

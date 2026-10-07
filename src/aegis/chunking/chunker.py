@@ -86,7 +86,7 @@ def iter_chunks(document: ExtractedDocument | ExtractedDocx, config: ChunkConfig
         identity = {
             "document": document.document_id,
             "config": asdict(config),
-            "algorithm": "structure-v1",
+            "algorithm": "structure-v2",
             "index": index,
             "text": text,
             "fragments": [asdict(fragment) for fragment in fragments],
@@ -104,6 +104,7 @@ def iter_chunks(document: ExtractedDocument | ExtractedDocx, config: ChunkConfig
             tuple(fragments),
             tuple(mappings),
             tuple(dict.fromkeys(warnings)),
+            algorithm="structure-v2",
         )
         index += 1
         return chunk
@@ -117,6 +118,27 @@ def iter_chunks(document: ExtractedDocument | ExtractedDocx, config: ChunkConfig
             and unit.kind != "heading"
         )
         separator_size = (1 if unit.kind == "table_row" else 2) if pending else 0
+        # Keep a short heading with the start of its following oversized paragraph.
+        if (
+            pending
+            and compatible
+            and all(part[0].kind == "heading" for part in pending)
+            and len(unit.text) > config.max_chars
+            and config.max_chars - pending_size - separator_size >= config.max_chars // 2
+        ):
+            end = _cut(unit.text, 0, config.max_chars - pending_size - separator_size)
+            yield emit([*pending, (unit, 0, end, 0)])
+            pending, pending_size = [], 0
+            start = end - min(config.overlap_chars, end // 2)
+            previous_end = end
+            while start < len(unit.text):
+                end = _cut(unit.text, start, config.max_chars)
+                yield emit([(unit, start, end, max(0, previous_end - start))])
+                if end == len(unit.text):
+                    break
+                previous_end = end
+                start = end - min(config.overlap_chars, (end - start) // 2)
+            continue
         if pending and (
             not compatible or pending_size + separator_size + len(unit.text) > config.max_chars
         ):

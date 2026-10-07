@@ -71,7 +71,7 @@ Open these local files after running inspection:
   physical PDF page with its `--- PAGE N ---` marker in the extracted text.
 - `docling/pdf/code_and_formula.pdf`: inspect equation/code extraction limitations.
 - `docling/ocr/ocr_test.pdf`: image-only document rejected pending OCR.
-- `docling/docx/word_tables.docx`: stored for future DOCX support, not currently parsed.
+- `docling/docx/word_tables.docx`: supported by the live DOCX workspace.
 
 To exercise the actual public API on a downloaded document:
 
@@ -89,7 +89,7 @@ process startup is excluded. Peak RSS includes the Python interpreter and native
 parser. These are single-machine observations, not throughput or accuracy claims.
 Extracted character counts establish that text exists, not that it is correct.
 
-Only PDF extraction is currently supported. OCR failures, inaccurate reading
+This legacy inspection helper evaluates native PDF extraction only; the application also supports DOCX and fallback PDF OCR. OCR failures, inaccurate reading
 order, repeated text, and lost table/equation structure remain visible limitations.
 Non-PDF files are retained for future phases. Hundreds or thousands of inputs
 will require a separate workload test; this corpus establishes variety first.

@@ -1,0 +1,258 @@
+{
+  "created_at": "2026-10-07T17:16:20.243810+00:00",
+  "model_key": "dded13d45cc9e8d329bfb1581545b6d02ddfffbd904fcab63db6e8bab6907780",
+  "scope": "8 controlled English paraphrases; development smoke set, not held-out",
+  "indexing": {
+    "windows": 8,
+    "chunks": 8,
+    "dimension": 384,
+    "model_key": "dded13d45cc9e8d329bfb1581545b6d02ddfffbd904fcab63db6e8bab6907780",
+    "method": "dense-cosine-exact-v1",
+    "encoded_chunks": 8,
+    "elapsed_seconds": 0.059
+  },
+  "metrics": {
+    "sparse": {
+      "recall_at_1": 0.125,
+      "recall_at_3": 0.125,
+      "mrr": 0.125
+    },
+    "dense": {
+      "recall_at_1": 0.875,
+      "recall_at_3": 1.0,
+      "mrr": 0.9375
+    },
+    "hybrid": {
+      "recall_at_1": 0.75,
+      "recall_at_3": 1.0,
+      "mrr": 0.875
+    }
+  },
+  "latency_mean_ms": {
+    "sparse": 0.39,
+    "dense": 9.11,
+    "hybrid": 9.52
+  },
+  "queries": [
+    {
+      "query": "How much force is exerted on each unit of surface area?",
+      "expected": "pressure",
+      "sparse": {
+        "rank": null,
+        "top3": [],
+        "latency_ms": 0.419
+      },
+      "dense": {
+        "rank": 1,
+        "top3": [
+          "pressure",
+          "thermal",
+          "interface"
+        ],
+        "latency_ms": 9.627
+      },
+      "hybrid": {
+        "rank": 1,
+        "top3": [
+          "pressure",
+          "thermal",
+          "interface"
+        ],
+        "latency_ms": 10.075
+      }
+    },
+    {
+      "query": "How do we detect excessive heat in the engine?",
+      "expected": "thermal",
+      "sparse": {
+        "rank": null,
+        "top3": [],
+        "latency_ms": 0.326
+      },
+      "dense": {
+        "rank": 1,
+        "top3": [
+          "thermal",
+          "verification",
+          "pressure"
+        ],
+        "latency_ms": 9.128
+      },
+      "hybrid": {
+        "rank": 1,
+        "top3": [
+          "thermal",
+          "verification",
+          "pressure"
+        ],
+        "latency_ms": 9.478
+      }
+    },
+    {
+      "query": "Are we building what the customer actually needs?",
+      "expected": "validation",
+      "sparse": {
+        "rank": null,
+        "top3": [],
+        "latency_ms": 0.332
+      },
+      "dense": {
+        "rank": 2,
+        "top3": [
+          "verification",
+          "validation",
+          "configuration"
+        ],
+        "latency_ms": 8.923
+      },
+      "hybrid": {
+        "rank": 2,
+        "top3": [
+          "verification",
+          "validation",
+          "configuration"
+        ],
+        "latency_ms": 9.278
+      }
+    },
+    {
+      "query": "How do we prove the design satisfies each required specification?",
+      "expected": "verification",
+      "sparse": {
+        "rank": null,
+        "top3": [
+          "configuration"
+        ],
+        "latency_ms": 0.412
+      },
+      "dense": {
+        "rank": 1,
+        "top3": [
+          "verification",
+          "configuration",
+          "validation"
+        ],
+        "latency_ms": 9.137
+      },
+      "hybrid": {
+        "rank": 2,
+        "top3": [
+          "configuration",
+          "verification",
+          "validation"
+        ],
+        "latency_ms": 9.574
+      }
+    },
+    {
+      "query": "How are modifications to an agreed design kept under control?",
+      "expected": "configuration",
+      "sparse": {
+        "rank": 1,
+        "top3": [
+          "configuration"
+        ],
+        "latency_ms": 0.415
+      },
+      "dense": {
+        "rank": 1,
+        "top3": [
+          "configuration",
+          "verification",
+          "thermal"
+        ],
+        "latency_ms": 9.11
+      },
+      "hybrid": {
+        "rank": 1,
+        "top3": [
+          "configuration",
+          "verification",
+          "thermal"
+        ],
+        "latency_ms": 9.55
+      }
+    },
+    {
+      "query": "How should we judge the chance and impact of things going wrong?",
+      "expected": "risk",
+      "sparse": {
+        "rank": null,
+        "top3": [],
+        "latency_ms": 0.378
+      },
+      "dense": {
+        "rank": 1,
+        "top3": [
+          "risk",
+          "thermal",
+          "verification"
+        ],
+        "latency_ms": 9.446
+      },
+      "hybrid": {
+        "rank": 1,
+        "top3": [
+          "risk",
+          "thermal",
+          "verification"
+        ],
+        "latency_ms": 9.847
+      }
+    },
+    {
+      "query": "Where do we specify how separate components communicate?",
+      "expected": "interface",
+      "sparse": {
+        "rank": null,
+        "top3": [],
+        "latency_ms": 0.514
+      },
+      "dense": {
+        "rank": 1,
+        "top3": [
+          "interface",
+          "thermal",
+          "configuration"
+        ],
+        "latency_ms": 8.744
+      },
+      "hybrid": {
+        "rank": 1,
+        "top3": [
+          "interface",
+          "thermal",
+          "configuration"
+        ],
+        "latency_ms": 9.281
+      }
+    },
+    {
+      "query": "How do we plan when dependent tasks must finish?",
+      "expected": "schedule",
+      "sparse": {
+        "rank": null,
+        "top3": [],
+        "latency_ms": 0.325
+      },
+      "dense": {
+        "rank": 1,
+        "top3": [
+          "schedule",
+          "risk",
+          "pressure"
+        ],
+        "latency_ms": 8.756
+      },
+      "hybrid": {
+        "rank": 1,
+        "top3": [
+          "schedule",
+          "risk",
+          "pressure"
+        ],
+        "latency_ms": 9.104
+      }
+    }
+  ]
+}
