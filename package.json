@@ -1,6 +1,6 @@
 {
   "name": "aegis-workspace-checks",
   "private": true,
-  "scripts": {"test:browser": "node scripts/check_workspace_browser.mjs", "test:private": "node scripts/check_private_browser.mjs"},
+  "scripts": {"test:browser": "node scripts/check_workspace_browser.mjs", "test:private": "node scripts/check_private_browser.mjs", "test:research": "node scripts/check_research_browser.mjs"},
   "devDependencies": {"playwright": "1.63.0"}
 }

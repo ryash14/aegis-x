@@ -29,7 +29,7 @@ try {
   const errors=[],remote=[],checks=[];
   page.on('pageerror',error=>errors.push(error.message));
   page.on('request',request=>{if(/^https?:/.test(request.url())&&new URL(request.url()).origin!==base)remote.push(request.url());});
-  async function signin(target,email){await target.goto(base);await target.locator('#email').fill(email);await target.locator('#password').fill('browser-only-test-password');await target.locator('#sign-in').click();await target.locator('#new-project').waitFor({state:'visible'});}
+  async function signin(target,email){await target.goto(base);await target.locator('#email').fill(email);await target.locator('#password').fill('browser-only-test-password');await target.locator('#sign-in').click();await target.locator('#new-project').waitFor({state:'visible'});await target.waitForFunction(()=>!document.getElementById('new-project').disabled&&document.getElementById('project-select').options.length>0);}
   async function data(path,project){const response=await context.request.get(base+path,{headers:project?{'X-Aegis-Project':project}:{}});assert.ok(response.ok(),await response.text());return response.json();}
   async function select(name){await page.locator(`.document-card[title="${name}"]`).click();await page.waitForFunction(name=>document.getElementById('document-name').textContent===name,name);}
   async function tab(method){await page.locator(`[data-method="${method}"]`).click();await page.waitForFunction(()=>!document.getElementById('output').textContent.includes('Loading…'));}

@@ -2,6 +2,7 @@
 
 import hashlib
 import hmac
+import json
 import os
 import re
 import secrets
@@ -39,7 +40,7 @@ class Store:
         self.dummy_hash = self.hasher.hash(secrets.token_hex(32))
         with self.connection() as db:
             version = db.execute("PRAGMA user_version").fetchone()[0]
-            if version > 1:
+            if version > 2:
                 raise RuntimeError("Application database is newer than this code")
             db.execute("PRAGMA journal_mode=WAL")
             if version == 0:
@@ -73,6 +74,24 @@ class Store:
                         key TEXT PRIMARY KEY, started_at INTEGER NOT NULL, attempts INTEGER NOT NULL
                     );
                     PRAGMA user_version=1;
+                    COMMIT;
+                """)
+            if version < 2:
+                db.executescript("""
+                    BEGIN IMMEDIATE;
+                    CREATE TABLE research_runs (
+                        id TEXT PRIMARY KEY,
+                        project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+                        parent_id TEXT REFERENCES research_runs(id) ON DELETE SET NULL,
+                        question TEXT NOT NULL, mode TEXT NOT NULL,
+                        status TEXT NOT NULL, stage TEXT NOT NULL,
+                        config TEXT NOT NULL, evidence TEXT NOT NULL DEFAULT '[]',
+                        trace TEXT NOT NULL DEFAULT '[]', result TEXT,
+                        error TEXT, cancel INTEGER NOT NULL DEFAULT 0,
+                        created_at REAL NOT NULL, updated_at REAL NOT NULL
+                    );
+                    CREATE INDEX research_project ON research_runs(project_id,created_at);
+                    PRAGMA user_version=2;
                     COMMIT;
                 """)
         self.path.chmod(0o600)
@@ -320,6 +339,49 @@ class Store:
     def unlink(self, identity):
         with self.connection() as db:
             db.execute("DELETE FROM project_documents WHERE document_id=?", (identity,))
+
+    @staticmethod
+    def decode_run(row):
+        value = dict(row)
+        for key in ("config", "evidence", "trace", "result"):
+            value[key] = json.loads(value[key]) if value[key] else None
+        return value
+
+    def run(self, owner, identity):
+        with self.connection() as db:
+            row = db.execute(
+                "SELECT r.* FROM research_runs r JOIN projects p ON p.id=r.project_id "
+                "WHERE r.id=? AND p.owner_id=? AND p.status='active'",
+                (identity, owner),
+            ).fetchone()
+        if not row:
+            raise KeyError("Research not found")
+        return self.decode_run(row)
+
+    def runs(self, owner, project, offset=0, limit=20):
+        self.project(owner, project)
+        with self.connection() as db:
+            rows = db.execute(
+                "SELECT id,parent_id,question,mode,status,stage,error,created_at,updated_at "
+                "FROM research_runs WHERE project_id=? ORDER BY created_at DESC,id "
+                "LIMIT ? OFFSET ?",
+                (project, min(50, max(1, limit)), max(0, offset)),
+            ).fetchall()
+        return [dict(row) for row in rows]
+
+    def forget_research_document(self, identity):
+        """Erase saved and follow-up research derived from a deleted source."""
+        with self.connection() as db:
+            rows = db.execute(
+                "WITH RECURSIVE affected(id) AS ("
+                "SELECT r.id FROM research_runs r WHERE EXISTS "
+                "(SELECT 1 FROM json_each(r.evidence) WHERE json_extract(value,'$.document_id')=?) "
+                "UNION SELECT r.id FROM research_runs r JOIN affected a ON r.parent_id=a.id) "
+                "SELECT id FROM affected",
+                (identity,),
+            ).fetchall()
+            for row in rows:
+                db.execute("DELETE FROM research_runs WHERE id=?", (row[0],))
 
     def begin_delete(self, owner, identity):
         self.project(owner, identity)

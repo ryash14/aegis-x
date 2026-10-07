@@ -125,7 +125,7 @@ a separate reranker download is not a prerequisite.
 **Exit:** search returns source-linked evidence across the collection, respects
 project isolation, survives restarts and has measured recall, ranking and latency.
 
-### Phase 3 — Evidence-grounded research and answer engine
+### Phase 3 — Evidence-grounded research and answer engine (implemented)
 
 Deliver cited answers, multi-document comparisons and a bounded investigation mode.
 Decompose complex questions into explicit subquestions, retrieve evidence, identify
@@ -286,7 +286,7 @@ mobile screenshots, lint, formatting and package build. The browser workflow use
 a NASA handbook, DOCX tables, a rotated scan and an encrypted failure fixture.
 No external HTTP requests occurred during that browser workflow.
 Report: `data/evaluation/private-browser/report.json`. Run instructions:
-[private app operations](workspace.md). Phases 3–5 remain open; Phase 1 does not
+[private app operations](workspace.md). Phases 4–5 remain open; Phase 1 does not
 include cited AI answers, the requirements review matrix or public deployment.
 
 
@@ -333,3 +333,49 @@ formatting and wheel build. The final browser run had no JavaScript exceptions o
 external HTTP requests. Historical standalone viewers/builders, the obsolete dense
 browser script and redundant model/report copies were removed. Operational docs,
 fixtures, pinned assets and regression/evaluation tools remain intentional.
+
+
+## Phase 3 acceptance — 7 October 2026
+
+Cited answers and bounded investigations run through the pinned local Qwen3 model.
+The persistent runner admits up to three pending runs per account and twenty across
+the app, executes one at a time, and limits each investigation to four retrieval
+calls, three model calls, 1,200 output tokens per call and a 180-second wall-clock
+budget by default. Model content is conservatively bounded by UTF-8 bytes within
+an 8,192-token context. Process-isolated HTTP requests are terminated on cancellation
+or deadline; they bypass proxies and reject redirects. Model identity is verified
+before sending document context. No model shell/network tool access is provided.
+
+Evidence IDs are assigned before generation. Saved snapshots include document and
+excerpt hashes, chunk identity/ranges, source mappings, revision labels and warnings.
+Code rejects unknown evidence IDs, changed quotations and invalid schemas. A separate
+model review rejects proposed unsupported claims or marks uncertainty for human
+review; this review is fallible. Potential conflicting passages are explicitly
+labelled for human review. These proposals are not deterministic contradiction proofs.
+
+The browser supports progress, cancellation, explicit retry, saved/paginated research,
+follow-ups with fresh evidence, highlighted citation drawers, source navigation and
+JSON evidence report downloads. Missing evidence returns an insufficient-evidence
+result; model/index unavailability produces an explicit retryable failed state.
+SQLite schema 2 migrates existing accounts/projects transactionally. Interrupted
+running research becomes failed with an explicit retry; queued work persists.
+Deleting a source removes saved research derived from it and its follow-ups; active
+runs lose access and terminate. Project deletion cascades through research records.
+
+Real-model verification used two invented controller requirements, 85°C and 80°C.
+A three-call investigation retrieved both and returned exact source quotations in
+22.67 seconds on this workstation. Chrome verified cited multi-document research,
+source highlights, follow-ups, saved results, reports, two-account isolation,
+unsupported-question abstention, cancellation and an injected document instruction.
+These are small reviewed smoke cases, not a comprehensive adversarial/security or
+answer-quality benchmark. Local reports: `data/evaluation/research-smoke.json` and
+`data/evaluation/research-browser/report.json`.
+
+Phases 4 and 5 remain: the requirements matrix, deterministic contextual checks,
+human decision history, complete release evaluation and deployment.
+
+Phase 3 checks passed: 178 tests in the full local run, plus the new account-wide
+pending-run limit regression; all twelve research tests passed after final refinements.
+Both private-app and actual-model research browser suites passed, with no JavaScript
+exceptions or external browser HTTP requests. Lint, formatting and wheel packaging
+passed. The live storage migrated to schema 2 while retaining accounts and projects.

@@ -172,9 +172,9 @@ $('chunk-next').onclick=async()=>{if(state.chunkPosition<state.chunks.length-1){
 let dragDepth=0;document.addEventListener('dragenter',event=>{if(event.dataTransfer.types.includes('Files')){event.preventDefault();dragDepth++;$('drop-overlay').hidden=false;}});document.addEventListener('dragleave',()=>{dragDepth=Math.max(0,dragDepth-1);if(!dragDepth)$('drop-overlay').hidden=true;});document.addEventListener('dragover',event=>event.preventDefault());document.addEventListener('drop',event=>{event.preventDefault();dragDepth=0;$('drop-overlay').hidden=true;if(event.dataTransfer.files.length)uploadFiles(event.dataTransfer.files);});
 $('preview').onerror=()=>toast('Page preview unavailable. Use Open original to inspect the PDF.');
 function updateProjectControls() {
-  for (const id of ['project-select','new-project','edit-project','delete-project']) $(id).disabled = state.uploading || (['edit-project','delete-project'].includes(id) && !state.projectId);
+  for (const id of ['project-select','new-project','edit-project','delete-project']) $(id).disabled = !state.session || state.uploading || (['edit-project','delete-project'].includes(id) && !state.projectId);
   $('settings-button').disabled = !state.projectId;
-  $('evidence-search').hidden = !state.projectId;
+  $('evidence-search').hidden = !state.projectId; $('research-panel').hidden = !state.projectId;
 }
 function renderProjects() {
   $('project-select').replaceChildren();
@@ -188,12 +188,16 @@ function renderProjects() {
   updateProjectControls();
 }
 async function chooseProject(identity) {
+  if($('evidence-drawer').open)$('evidence-drawer').close();$('evidence-text').replaceChildren();
+  state.historyOffset=0;state.researchId=null;state.researchRun=null;state.researchBusy=false;state.researchSequence=(state.researchSequence||0)+1;
+  $('research-answer').replaceChildren();$('research-trace').replaceChildren();$('research-status').textContent='';
+  for(const id of ['research-cancel','research-retry','research-followup','research-report'])$(id).hidden=true;
   $('evidence-results').replaceChildren(); $('evidence-status').textContent='Search the evidence in this project.';
 
   if (state.uploading) return;
   ++state.viewSequence;state.projectId=identity || null;state.selected=null;state.job=null;state.summary=null;state.documents=[];state.total=0;state.listOffset=0;state.query='';$('search').value='';
   if (state.projectId) localStorage.setItem('aegis.project:'+state.session.user.id,state.projectId);
-  renderProjects();renderLibrary();renderJob();await refresh();
+  renderProjects();renderLibrary();renderJob();await refresh();await refreshResearch();
 }
 let editingProject=null;
 function openProjectDialog(project=null) {
@@ -229,5 +233,45 @@ $('evidence-form').onsubmit=async event=>{
     }
   }catch(error){if(project===state.projectId)$('evidence-status').textContent=error.message;}finally{$('evidence-submit').disabled=false;}
 };
+async function refreshResearch(){
+  if(!state.projectId||state.researchBusy)return;state.researchBusy=true;const project=state.projectId,sequence=state.researchSequence;
+  try{
+    const history=await api('/api/research?offset='+(state.historyOffset||0));if(project!==state.projectId||sequence!==state.researchSequence)return;
+    $('research-newer').hidden=!(state.historyOffset||0);$('research-older').hidden=history.runs.length<20;
+    $('research-history').replaceChildren(node('option','Choose a saved run'));$('research-history').firstChild.value='';
+    for(const run of history.runs){const option=node('option',run.status+' · '+run.question.slice(0,90));option.value=run.id;$('research-history').append(option);}
+    if(state.researchId){$('research-history').value=state.researchId;const run=await api('/api/research/'+state.researchId);if(project!==state.projectId||sequence!==state.researchSequence)return;renderResearch(run);}
+  }catch(error){if(project===state.projectId){$('research-status').textContent=error.message;if(error.status===404){state.researchId=null;state.researchRun=null;$('research-answer').replaceChildren();$('research-trace').replaceChildren();for(const id of ['research-cancel','research-retry','research-followup','research-report'])$(id).hidden=true;}}}finally{state.researchBusy=false;}
+}
+async function showEvidence(run,id,quote){
+  try{const source=await api('/api/research/'+run.id+'/evidence/'+id);$('evidence-title').textContent=source.id+' · '+source.name;$('evidence-metadata').textContent=source.role+' · '+source.revision+' · '+(source.pages.length?'Page '+source.pages.join(', '):'DOCX')+' · SHA-256 '+source.document_sha256;$('evidence-text').replaceChildren();const at=source.text.indexOf(quote||'');if(quote&&at>=0){$('evidence-text').append(document.createTextNode(source.text.slice(0,at)),node('mark',quote),document.createTextNode(source.text.slice(at+quote.length)));}else $('evidence-text').textContent=source.text;$('evidence-source').href=source.source_url;$('evidence-mappings').textContent=JSON.stringify({excerpt_range:[source.chunk_start,source.chunk_end],mappings:source.mappings,warnings:source.warnings},null,2);$('evidence-drawer').showModal();}catch(error){toast(error.message);}
+}
+function renderResearch(run){
+  state.researchRun=run;$('research-status').textContent=run.status+' · '+run.stage+(run.error?' · '+run.error:'');
+  const terminal=['completed','failed','cancelled'].includes(run.status);$('research-cancel').hidden=terminal;$('research-retry').hidden=!['failed','cancelled'].includes(run.status);$('research-followup').hidden=run.status!=='completed';$('research-report').hidden=run.status!=='completed';$('research-report').href='/api/research/'+run.id+'/report';
+  $('research-answer').replaceChildren();$('research-trace').replaceChildren();
+  $('research-trace').append(node('div',JSON.stringify(run.config,null,2),'research-trace-row'));
+  for(const step of run.trace)$('research-trace').append(node('div',JSON.stringify(step,null,2),'research-trace-row'));
+  if(!run.result)return;
+  $('research-answer').append(node('h3',run.result.status.replaceAll('_',' ')));
+  function refs(target,citations){const group=node('div',undefined,'research-citations');for(const citation of citations){const button=node('button',citation.evidence_id+' · exact quote');button.onclick=()=>showEvidence(run,citation.evidence_id,citation.quote);button.title=citation.quote;group.append(button);}target.append(group);}
+  for(const claim of run.result.claims){const item=node('article',undefined,'research-claim');item.append(node('p',claim.text));refs(item,claim.citations);item.append(node('p',claim.support.replaceAll('_',' ')+(claim.support_reason?' · '+claim.support_reason:''),'muted'));$('research-answer').append(item);}
+  for(const conflict of run.result.potential_conflicts){const item=node('article',undefined,'research-claim');item.append(node('h3','Potential conflicting passages — needs human review'));item.append(node('p',conflict.description));refs(item,conflict.citations);$('research-answer').append(item);}
+  for(const reason of [...run.result.unresolved,...(run.result.limitations||[])])$('research-answer').append(node('p',reason,'research-unresolved'));
+}
+async function startResearch(parent=null){
+  const project=state.projectId;$('research-submit').disabled=true;$('research-status').textContent='Queueing local research…';
+  try{const run=await api('/api/research',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:$('research-question').value,mode:$('research-mode').value,retrieval:$('research-retrieval').value,parent_id:parent})});if(project!==state.projectId)return;state.historyOffset=0;state.researchId=run.id;state.researchSequence=(state.researchSequence||0)+1;renderResearch(run);await refreshResearch();}catch(error){if(project===state.projectId)$('research-status').textContent=error.message;}finally{$('research-submit').disabled=false;}
+}
+$('research-form').onsubmit=event=>{event.preventDefault();startResearch();};
+$('research-followup').onclick=()=>{if(!$('research-question').reportValidity())return;startResearch(state.researchId);};
+$('research-history').onchange=async event=>{state.researchId=event.target.value||null;state.researchSequence=(state.researchSequence||0)+1;if(state.researchId)await refreshResearch();else{$('research-answer').replaceChildren();$('research-trace').replaceChildren();$('research-status').textContent='';for(const id of ['research-cancel','research-retry','research-followup','research-report'])$(id).hidden=true;}};
+$('research-older').onclick=()=>{state.historyOffset=(state.historyOffset||0)+20;refreshResearch();};
+$('research-newer').onclick=()=>{state.historyOffset=Math.max(0,(state.historyOffset||0)-20);refreshResearch();};
+$('research-cancel').onclick=async()=>{try{renderResearch(await api('/api/research/'+state.researchId+'/cancel',{method:'POST'}));}catch(error){toast(error.message);}};
+$('research-retry').onclick=async()=>{try{const run=await api('/api/research/'+state.researchId+'/retry',{method:'POST'});state.historyOffset=0;state.researchId=run.id;state.researchSequence=(state.researchSequence||0)+1;renderResearch(run);}catch(error){toast(error.message);}};
+$('evidence-close').onclick=()=>$('evidence-drawer').close();
+setInterval(refreshResearch,1200);
 $('logout').onclick=async()=>{try{await api('/api/auth/logout',{method:'POST'});location.replace('/login');}catch(error){toast(error.message);}};
+updateProjectControls();
 (async()=>{try{state.session=await api('/api/session');$('account-name').textContent=state.session.user.name;$('upload-limit').textContent='Per file: '+bytes(state.session.max_file_bytes)+' · '+state.session.workers+' document workers';state.projects=(await api('/api/projects')).projects;const saved=localStorage.getItem('aegis.project:'+state.session.user.id);let identity=state.projects.some(p=>p.id===saved) ? saved : state.projects[0]?.id;const params=new URLSearchParams(location.search);let linked=null;if(params.has('document')){try{linked=await api('/api/documents/'+params.get('document'));identity=linked.project_id;}catch(error){toast(error.message);}}await chooseProject(identity);if(linked){await selectDocument(linked.id);if(state.summary&&linked.format==='pdf')await changePage(params.get('page')||1);if(state.summary&&params.has('chunk')){state.method='chunks';state.focusChunk=Number(params.get('chunk'));await loadView();const index=state.chunks.findIndex(chunk=>chunk.index===Number(params.get('chunk')));if(index>=0){state.chunkPosition=index;await loadChunk();}}}setInterval(refresh,1500);}catch(error){toast(error.message);}})();

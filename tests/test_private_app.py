@@ -450,7 +450,7 @@ def test_schema_and_secure_cookie_configuration(tmp_path):
     store = Store(root)
     store.add_user("alice@example.test", "Alice", PASSWORD)
     with store.connection() as db:
-        assert db.execute("PRAGMA user_version").fetchone()[0] == 1
+        assert db.execute("PRAGMA user_version").fetchone()[0] == 2
         assert db.execute("SELECT password_hash FROM users").fetchone()[0].startswith("$argon2id$")
     with running(root, secure_cookies=True) as (_, base):
         client = Client(base)
@@ -466,7 +466,7 @@ def test_schema_and_secure_cookie_configuration(tmp_path):
         assert status == 200 and "__Host-aegis_session" in headers.get_all("Set-Cookie")[0]
         assert "Secure" in headers.get_all("Set-Cookie")[0]
     with sqlite3.connect(store.path) as db:
-        db.execute("PRAGMA user_version=2")
+        db.execute("PRAGMA user_version=3")
     with pytest.raises(RuntimeError, match="newer"):
         Store(root)
     with pytest.raises(ValueError):

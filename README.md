@@ -4,11 +4,13 @@ A private, local-first technical research platform combining evidence-grounded
 multi-document investigation with requirements revision review and contextual
 consistency checks. Requirements intelligence is the flagship workflow.
 
-Phases 1 and 2 are implemented: private accounts, owned projects, PDF/DOCX ingestion,
+Phases 1–3 are implemented: private accounts, owned projects, PDF/DOCX ingestion,
 local OCR, source inspection, revision labels, persistent jobs and permanent deletion.
 The [five-phase plan](docs/architecture.md) tracks the remaining research and review
 features. Project-scoped keyword, semantic and hybrid search index ready documents automatically
 and return bounded, source-linked evidence with document/revision/section filters.
+Cited local-model answers and bounded investigations save inspectable evidence,
+research traces, follow-ups and reports. Requirements intelligence remains Phase 4.
 
 ## Run the private app
 
@@ -31,6 +33,12 @@ The earlier single-user inspection/search tool remains available through
 using separate `data/workspace/` storage. It is a development tool; the new app
 owns the authenticated product workflow.
 
+For cited answers, start the local model in another terminal:
+
+```bash
+uv run --locked python scripts/start_local_model.py
+```
+
 ## Architecture and completion plan
 
 See [architecture](docs/architecture.md) for the problem, implemented components,
@@ -46,7 +54,8 @@ uv build
 ```
 
 Browser regression checks: `npm ci` then `npm run test:private` for the private app
-and `npm run test:browser` for the earlier workspace.
+and `npm run test:browser` for the earlier workspace. With the local model running,
+`npm run test:research` checks the actual research workflow.
 Tests and evaluation helpers are retained because they validate application behavior.
 
 ## Reference

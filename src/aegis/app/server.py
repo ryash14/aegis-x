@@ -22,6 +22,7 @@ from aegis.chunking import ChunkConfig
 from aegis.workspace.server import DOCX_MIME
 from aegis.workspace.service import Workspace
 
+from .investigation import Investigations, LocalModel
 from .research import Research
 from .store import Store
 
@@ -58,6 +59,12 @@ class Settings:
             os.getenv("AEGIS_EMBEDDING_MODEL", "data/models/bge-small-en-v1.5")
         )
     )
+    model_url: str = field(
+        default_factory=lambda: os.getenv("AEGIS_MODEL_URL", "http://127.0.0.1:11435")
+    )
+    research_timeout: int = field(
+        default_factory=lambda: int(os.getenv("AEGIS_RESEARCH_TIMEOUT", "180"))
+    )
     public_origin: str = field(default_factory=lambda: os.getenv("AEGIS_PUBLIC_ORIGIN", ""))
 
     def __post_init__(self):
@@ -71,6 +78,17 @@ class Settings:
             or "*" in self.allowed_hosts
         ):
             raise ValueError("Use positive session limits and explicit trusted hosts")
+        local = urlsplit(self.model_url)
+        if (
+            local.scheme != "http"
+            or local.hostname not in {"127.0.0.1", "localhost", "::1"}
+            or local.path
+            or local.query
+            or local.fragment
+            or local.username
+            or not 10 <= self.research_timeout <= 600
+        ):
+            raise ValueError("Use a loopback model endpoint and a 10–600 second research timeout")
         if self.public_origin:
             parsed = urlsplit(self.public_origin)
             if parsed.scheme not in {"http", "https"} or parsed.hostname not in self.allowed_hosts:
@@ -132,8 +150,17 @@ def create_app(settings=None):
             app.state.research = await run_in_threadpool(
                 Research, workspace, store, app.state.mutations, settings.embedding_model
             )
+            app.state.investigations = Investigations(
+                store,
+                app.state.research,
+                app.state.mutations,
+                LocalModel(settings.model_url),
+                timeout=settings.research_timeout,
+            )
             yield
         finally:
+            if hasattr(app.state, "investigations"):
+                await run_in_threadpool(app.state.investigations.close)
             if hasattr(app.state, "research"):
                 await run_in_threadpool(app.state.research.close)
             await run_in_threadpool(workspace.close)
@@ -483,6 +510,7 @@ def create_app(settings=None):
     def remove(identity: str, request: Request, user=user_dependency):
         with app.state.mutations:
             document(request, user, identity)
+            app.state.store.forget_research_document(identity)
             app.state.workspace.purge(identity)
             app.state.store.unlink(identity)
         return {"deleted": True}
@@ -556,6 +584,73 @@ def create_app(settings=None):
             if 0 <= number < job["chunks"]:
                 return workspace.read_json(identity, f"chunk-{number}.json")
         raise HTTPException(404, "Artifact not found")
+
+    @app.get("/api/research")
+    def research_history(request: Request, offset: int = 0, limit: int = 20, user=user_dependency):
+        identity = project_id(request, user)
+        return {"runs": app.state.store.runs(user["id"], identity, offset, limit)}
+
+    @app.post("/api/research", status_code=202)
+    async def start_research(request: Request, user=user_dependency):
+        identity = await run_in_threadpool(project_id, request, user)
+        body = await json_body(request)
+        try:
+            return await run_in_threadpool(
+                app.state.investigations.create,
+                user["id"],
+                identity,
+                body.get("question"),
+                body.get("mode", "answer"),
+                body.get("parent_id"),
+                body.get("retrieval", "hybrid"),
+            )
+        except BlockingIOError as exc:
+            raise HTTPException(429, str(exc)) from exc
+
+    def owned_run(user, identity):
+        return app.state.store.run(user["id"], identity)
+
+    @app.get("/api/research/{identity}")
+    def read_research(identity: str, user=user_dependency):
+        return owned_run(user, identity)
+
+    @app.post("/api/research/{identity}/cancel")
+    def cancel_research(identity: str, user=user_dependency):
+        return app.state.investigations.cancel(user["id"], identity)
+
+    @app.post("/api/research/{identity}/retry", status_code=202)
+    def retry_research(identity: str, user=user_dependency):
+        existing = owned_run(user, identity)
+        if existing["status"] not in {"failed", "cancelled"}:
+            raise HTTPException(409, "Only failed or cancelled research can be retried")
+        try:
+            return app.state.investigations.create(
+                user["id"],
+                existing["project_id"],
+                existing["question"],
+                existing["mode"],
+                existing["parent_id"],
+                existing["config"]["retrieval"],
+            )
+        except BlockingIOError as exc:
+            raise HTTPException(429, str(exc)) from exc
+
+    @app.get("/api/research/{identity}/evidence/{evidence_id}")
+    def saved_evidence(identity: str, evidence_id: str, user=user_dependency):
+        run = owned_run(user, identity)
+        items = [item for item in run["evidence"] if item["id"] == evidence_id]
+        if not items:
+            raise KeyError("Evidence not found")
+        return items[0]
+
+    @app.get("/api/research/{identity}/report")
+    def research_report(identity: str, user=user_dependency):
+        run = owned_run(user, identity)
+        if run["status"] != "completed":
+            raise HTTPException(409, "Research is not complete")
+        response = JSONResponse({"report_version": 1, "research": run})
+        response.headers["Content-Disposition"] = f'attachment; filename="research-{identity}.json"'
+        return response
 
     @app.get("/api/search/status")
     def search_status(request: Request, user=user_dependency):

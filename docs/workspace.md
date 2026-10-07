@@ -43,12 +43,46 @@ Hybrid, Keyword or Semantic search, filter by document/revision/role/section/kin
 format and open **Inspect exact source**. Surrounding evidence is limited to adjacent
 chunks with the same heading context and evidence kind. Context defaults to 12,000
 characters and never exceeds the requested 1,000–24,000 character budget. Scores
-are ranking signals, not confidence probabilities. No answer generation runs yet.
+are ranking signals, not confidence probabilities. Cited research uses the separate workflow described below.
 
 The authenticated APIs are `GET /api/search` and `GET /api/search/status` with the
 selected project in `X-Aegis-Project`. Query parameters additionally support PDF
 page, 1–20 results and context budget. Missing model assets leave keyword search
 available; semantic/hybrid requests return a clear unavailable response.
+
+## Cited research and investigations
+
+Start the verified local model in a second terminal, then start the app:
+
+```bash
+uv run --locked python scripts/start_local_model.py
+uv run --locked --extra dense aegis-app serve
+```
+
+The model stays private at `127.0.0.1:11435`; it is not a browser-facing endpoint.
+Use **Evidence-grounded research** above search. Choose a cited answer or multi-step
+investigation. Ready documents must finish indexing first. Every accepted claim
+has a source citation: click it to view the saved excerpt, highlighted exact quote,
+source hash, ranges and warnings, then open the original chunk. A model support
+review is labelled separately from deterministic quotation validation.
+
+Saved research can be reopened from history (including older pages). Enter another
+question and use **Ask follow-up** to link it to the selected completed run while
+retrieving fresh evidence. **Cancel run** terminates active requests. **Retry** creates
+a new run from a failed/cancelled run. Completed results offer a JSON evidence report.
+Partial/insufficient-evidence answers display unresolved questions rather than a
+confident fabricated summary. Semantic support checks remain fallible; inspect sources.
+
+Runs share one model runner and have explicit call/time/context limits. The default
+wall-clock limit is 180 seconds. Long cold starts can fail within that budget; warm
+up the runtime or configure an appropriate limit before starting the app. On restart,
+interrupted research is marked failed and requires retry; completed research persists.
+Source deletion also erases saved research derived from it and its follow-ups.
+
+Authenticated research routes: `POST /api/research`, `GET /api/research`,
+`GET /api/research/ID`, `POST /api/research/ID/cancel`, `POST /api/research/ID/retry`,
+`GET /api/research/ID/evidence/EVIDENCE_ID` and `GET /api/research/ID/report`.
+All mutations require the session CSRF token; all records are project-owner scoped.
 
 ## Configuration
 
@@ -58,6 +92,8 @@ automatically. `--storage PATH` before the subcommand overrides the storage loca
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `AEGIS_STORAGE` | `data/app` | Private database, session key and document artifacts |
+| `AEGIS_MODEL_URL` | `http://127.0.0.1:11435` | Loopback-only pinned generation runtime |
+| `AEGIS_RESEARCH_TIMEOUT` | `180` | Research wall-clock budget, 10–600 seconds |
 | `AEGIS_EMBEDDING_MODEL` | `data/models/bge-small-en-v1.5` | Verified local BGE assets |
 | `AEGIS_WORKERS` | `2` | Shared parser workers across all projects |
 | `AEGIS_MAX_FILE_MIB` | `100` | Maximum individual upload size |
@@ -79,7 +115,7 @@ ownership. Secure cookies and an explicit trusted HTTPS origin are required for
 external serving. The CLI defaults to loopback. Ollama is not exposed by this app.
 
 Keep the entire storage directory, including `session.key`, private and persistent.
-Database schema version 1 is created transactionally; newer unsupported versions
+Database schema version 2 is created transactionally; newer unsupported versions
 are refused. Backup/restore tooling and deployment verification belong to later phases.
 
 ## Verify the private app
@@ -87,6 +123,7 @@ are refused. Backup/restore tooling and deployment verification belong to later 
 ```bash
 uv run --locked pytest -q
 npm run test:private
+npm run test:research # requires the local model server
 ```
 
 The browser check uses temporary accounts and storage, with local public fixtures
