@@ -158,6 +158,40 @@ class Research:
                 "model_key": self.dense.encoder.key if self.dense else None,
             }
 
+    def overview(self, owner, project):
+        """Use opening passages for broad summaries instead of ranking the word document."""
+        hits = []
+        with self.mutations:
+            documents = self.scope(owner, project)
+            for identity, metadata in documents.items():
+                job = self.workspace.get(identity)
+                if job["status"] != "ready":
+                    continue
+                for number in range(min(job["chunks"], 4)):
+                    chunk = self.workspace.read_json(identity, f"chunk-{number}.json")
+                    pages = sorted(
+                        {
+                            mapping["page"]
+                            for mapping in chunk["mappings"]
+                            if mapping.get("page") is not None
+                        }
+                    )
+                    hits.append(
+                        {
+                            "job_id": identity,
+                            "chunk_index": number,
+                            "chunk": chunk,
+                            "name": job["name"],
+                            "revision": metadata["revision"],
+                            "role": metadata["role"],
+                            "pages": pages,
+                            "source_url": f"/?document={identity}&chunk={number}",
+                        }
+                    )
+                if len(hits) >= 20:
+                    break
+        return hits[:20]
+
     def search(self, owner, project, query, *, mode="hybrid", limit=10, budget=12000, **filters):
         if mode not in {"sparse", "dense", "hybrid"}:
             raise ValueError("Use sparse, dense or hybrid retrieval")

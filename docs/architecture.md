@@ -379,3 +379,20 @@ pending-run limit regression; all twelve research tests passed after final refin
 Both private-app and actual-model research browser suites passed, with no JavaScript
 exceptions or external browser HTTP requests. Lint, formatting and wheel packaging
 passed. The live storage migrated to schema 2 while retaining accounts and projects.
+
+
+### Chat usability and overview correction — 7 October 2026
+
+Chat, Documents and Search evidence now occupy separate navigation views. Chat has
+a focused composer, automatic follow-ups, saved history and inspectable source
+buttons. Extraction controls stay in Documents; retrieval filters stay in Search.
+Technical traces, limitations and model options are collapsed by default.
+
+Generic overview questions use bounded opening passages from authorized project
+documents, rather than retrieving the generic word “document.” This does not claim
+exhaustive coverage of a long document. The model selects a saved evidence ID with
+an @ID marker; the server resolves it to the exact immutable excerpt and records
+its original offsets. Ordinary verbatim quotations remain supported and altered
+quotes remain rejected. Semantic support still requires review and is fallible.
+The support-review prompt avoids duplicating full quotations already present in
+the evidence, preserving the existing context and model-call budgets.

@@ -139,7 +139,8 @@ def test_cited_answer_saved_followup_reports_and_isolation(research_app):
     assert alice.request("/api/research/" + run["id"] + "/evidence/E001")[1]["text"]
     followup = complete(alice, start(alice, parent_id=run["id"])["id"])
     assert followup["status"] == "completed" and followup["parent_id"] == run["id"]
-    assert "Follow-up:" in json.dumps(app.state.investigations.model.calls)
+    payload = json.loads(app.state.investigations.model.calls[-1][-1]["content"])
+    assert payload["questions"][0] == followup["question"]
     assert alice.request("/api/research/" + run["id"] + "/retry", method="POST")[0] == 409
     assert alice.request("/api/documents/" + job["id"], method="DELETE")[0] == 200
     assert alice.request("/api/research/" + run["id"])[0] == 404
@@ -372,3 +373,29 @@ def test_pending_research_limit_applies_across_owned_projects(research_app):
     assert alice.request("/api/research", method="POST", body={"question": "controller"})[0] == 429
     for run in pending:
         assert alice.request("/api/research/" + run["id"] + "/cancel", method="POST")[0] == 200
+
+
+def test_source_selection_attaches_exact_saved_passage():
+    source = {
+        "id": "E001",
+        "text": "The operating limit is 85 Celsius.\nDo not exceed this limit.",
+        "chunk_start": 17,
+    }
+    proposal = {
+        "claims": [
+            {
+                "text": "The limit is 85 Celsius.",
+                "subquestion": 0,
+                "citations": [{"evidence_id": "E001", "quote": "@E001"}],
+            }
+        ],
+        "unresolved": [],
+        "potential_conflicts": [],
+    }
+    result = validate_answer(proposal, [source], ["What is the limit?"])
+    citation = result["claims"][0]["citations"][0]
+    assert citation["quote"] == source["text"]
+    assert citation["chunk_start"] == 17
+    assert citation["chunk_end"] == 17 + len(source["text"])
+    proposal["claims"][0]["citations"][0]["quote"] = "@E002"
+    assert not validate_answer(proposal, [source], ["What is the limit?"])["claims"]
