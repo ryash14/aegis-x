@@ -40,7 +40,7 @@ class Store:
         self.dummy_hash = self.hasher.hash(secrets.token_hex(32))
         with self.connection() as db:
             version = db.execute("PRAGMA user_version").fetchone()[0]
-            if version > 2:
+            if version > 3:
                 raise RuntimeError("Application database is newer than this code")
             db.execute("PRAGMA journal_mode=WAL")
             if version == 0:
@@ -92,6 +92,33 @@ class Store:
                     );
                     CREATE INDEX research_project ON research_runs(project_id,created_at);
                     PRAGMA user_version=2;
+                    COMMIT;
+                """)
+            if version < 3:
+                db.executescript("""
+                    BEGIN IMMEDIATE;
+                    CREATE TABLE reviews (
+                        id TEXT PRIMARY KEY,
+                        project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+                        baseline_id TEXT NOT NULL
+                            REFERENCES project_documents(document_id) ON DELETE CASCADE,
+                        candidate_id TEXT NOT NULL
+                            REFERENCES project_documents(document_id) ON DELETE CASCADE,
+                        status TEXT NOT NULL, config TEXT NOT NULL, cache_key TEXT NOT NULL,
+                        result TEXT, result_sha256 TEXT, error TEXT,
+                        progress INTEGER NOT NULL DEFAULT 0,
+                        created_at REAL NOT NULL, updated_at REAL NOT NULL
+                    );
+                    CREATE INDEX reviews_project ON reviews(project_id,created_at);
+                    CREATE TABLE review_decisions (
+                        sequence INTEGER PRIMARY KEY AUTOINCREMENT,
+                        review_id TEXT NOT NULL REFERENCES reviews(id) ON DELETE CASCADE,
+                        row_id TEXT NOT NULL, actor_id TEXT NOT NULL REFERENCES users(id),
+                        decision TEXT NOT NULL, note TEXT NOT NULL, created_at REAL NOT NULL,
+                        previous_hash TEXT NOT NULL, entry_hash TEXT NOT NULL
+                    );
+                    CREATE INDEX decisions_review ON review_decisions(review_id,sequence);
+                    PRAGMA user_version=3;
                     COMMIT;
                 """)
         self.path.chmod(0o600)

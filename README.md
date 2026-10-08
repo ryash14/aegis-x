@@ -4,13 +4,12 @@ A private, local-first technical research platform combining evidence-grounded
 multi-document investigation with requirements revision review and contextual
 consistency checks. Requirements intelligence is the flagship workflow.
 
-Phases 1–3 are implemented: private accounts, owned projects, PDF/DOCX ingestion,
-local OCR, source inspection, revision labels, persistent jobs and permanent deletion.
-The [five-phase plan](docs/architecture.md) tracks the remaining research and review
-features. Project-scoped keyword, semantic and hybrid search index ready documents automatically
-and return bounded, source-linked evidence with document/revision/section filters.
-Cited local-model answers and bounded investigations save inspectable evidence,
-research traces, follow-ups and reports. Requirements intelligence remains Phase 4.
+The core private application, hybrid retrieval, cited research and revision review
+are implemented. Requirements review enumerates explicit English requirements,
+compares revisions, checks supported quantities and preserves human decision history.
+Research uses a pinned local model with source/quotation validation and bounded
+investigation. [Architecture](docs/architecture.md) describes the implemented scope
+and limits; [deployment](docs/deployment.md) covers the single-host release.
 
 ## Run the private app
 
@@ -26,11 +25,15 @@ uv run --locked aegis-app serve
 
 Open http://127.0.0.1:8787, sign in, create a project and upload PDF/DOCX files.
 Use **Documents** to upload and inspect sources, **Chat** for cited answers and
-follow-ups, and **Search evidence** for retrieval filters. Select a specific document
+follow-ups, **Search evidence** for retrieval filters, and **Revision review** for baseline/candidate
+comparisons, source inspection, decisions and report export. Select a specific document
 in Chat to prevent mixing revisions; a live timer includes queueing through the
 validated response. Technical details are
 collapsed by default. Broad summaries use bounded opening passages, not an
 exhaustive review of every page.
+
+A private Linux deployment can use the supplied systemd services and Caddy TLS
+configuration. Public hosting requires a provisioned target host and domain.
 
 Private state persists under ignored `data/app/`. There are no default credentials.
 See [operations](docs/workspace.md) for configuration and account administration.
@@ -62,8 +65,16 @@ uv build
 
 Browser regression checks: `npm ci` then `npm run test:private` for the private app
 and `npm run test:browser` for the earlier workspace. With the local model running,
-`npm run test:research` checks the actual research workflow.
+`npm run test:research` checks the actual research and review workflow.
+`npm run test:deployment` checks TLS login, restart and backup recovery with a verified
+local Caddy binary; see the deployment guide.
 Tests and evaluation helpers are retained because they validate application behavior.
+
+## Resume demonstration
+
+`showcase/` is a standalone static walkthrough site. It includes a real synthetic-
+document recording, explanation captions, architecture and honest validation limits.
+The private application is separate from this public-facing demo.
 
 ## Reference
 

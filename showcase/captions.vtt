@@ -1,0 +1,22 @@
+WEBVTT
+
+00:00:01.857 --> 00:00:06.279
+Two invented controller specifications are uploaded and indexed locally.
+
+00:00:06.279 --> 00:00:08.842
+The same requirement ID changes from 85 to 80 Celsius: a tighter maximum.
+
+00:00:08.842 --> 00:00:11.420
+A human decision and reason are saved separately from generated answers.
+
+00:00:11.420 --> 00:00:23.245
+The finding opens a linked investigation; its review ID and result hash are retained.
+
+00:00:23.245 --> 00:00:25.788
+The actual local model compares both revisions and returns cited claims.
+
+00:00:25.788 --> 00:00:29.788
+Each citation exposes its exact quotation, source identity and original ranges.
+
+00:00:30.000 --> 00:00:53.120
+Further checks cover follow-ups, saved runs, abstention, document scope and cancellation.

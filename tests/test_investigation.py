@@ -283,12 +283,14 @@ def test_schema_one_migrates_without_losing_accounts_or_projects(tmp_path):
     owner = store.add_user("old@example.test", "Original owner", PASSWORD)
     project = store.create_project(owner, "Original project")
     with store.connection() as db:
+        db.execute("DROP TABLE review_decisions")
+        db.execute("DROP TABLE reviews")
         db.execute("DROP TABLE research_runs")
         db.execute("PRAGMA user_version=1")
     upgraded = Store(tmp_path)
     assert upgraded.project(owner, project["id"])["name"] == "Original project"
     with upgraded.connection() as db:
-        assert db.execute("PRAGMA user_version").fetchone()[0] == 2
+        assert db.execute("PRAGMA user_version").fetchone()[0] == 3
         assert db.execute("SELECT count(*) FROM research_runs").fetchone()[0] == 0
 
 

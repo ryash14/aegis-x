@@ -1,0 +1,27 @@
+[Unit]
+Description=AEGIS private document application
+After=network.target aegis-model.service
+Requires=aegis-model.service
+
+[Service]
+Type=simple
+User=aegis
+Group=aegis
+WorkingDirectory=/opt/aegis
+EnvironmentFile=/etc/aegis/aegis.env
+ExecStart=/opt/aegis/.venv/bin/aegis-app serve --host 127.0.0.1 --port 8787
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=45
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/aegis
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+MemoryMax=6G
+TasksMax=128
+
+[Install]
+WantedBy=multi-user.target

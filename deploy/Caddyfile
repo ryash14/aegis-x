@@ -1,0 +1,12 @@
+{$AEGIS_DOMAIN} {
+	encode zstd gzip
+	header Strict-Transport-Security "max-age=31536000"
+	request_body {
+		max_size 100MB
+	}
+	reverse_proxy 127.0.0.1:8787 {
+		transport http {
+			response_header_timeout 330s
+		}
+	}
+}

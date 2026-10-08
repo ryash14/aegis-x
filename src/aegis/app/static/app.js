@@ -2,7 +2,7 @@
 const $ = id => document.getElementById(id);
 const state = {session: null, projectId: null, projects: [], uploading: false, documents: [], selected: null, job: null, summary: null, method: 'normalized', page: 1, pageData: null, structure: null, chunks: [], chunkOffset: 0, chunkTotal: 0, chunkPosition: 0, chunk: null, pdf: false, viewSequence: 0, query: '', listOffset: 0, limit: 50, refreshing: false};
 const descriptions = {baseline: 'Original sorted text. Columns can interleave.', layout: 'Native blocks in geometric reading order.', normalized: 'Conservative edits, with original source ranges.', ocr: 'Local OCR on pages without native text.', structure: 'Paragraphs, outline headings, tables and image references.', chunks: 'Bounded text with section boundaries and source references.'};
-const labels = {queued: 'Queued', starting: 'Starting', parsing: 'Parsing', ocr: 'Recognizing scan', saving: 'Saving results', chunking: 'Chunking', ready: 'Ready', failed: 'Failed'};
+const labels = {queued: 'Queued', starting: 'Starting', parsing: 'Parsing', ocr: 'Recognizing scan', saving: 'Saving results', chunking: 'Chunking', ready: 'Ready', failed: 'Failed', cancelled: 'Cancelled'};
 function node(tag, text, className) {const element = document.createElement(tag); if (text !== undefined) element.textContent = text; if (className) element.className = className; return element;}
 function bytes(value) {if (value < 1024) return value + ' B'; if (value < 1024 ** 2) return (value / 1024).toFixed(1) + ' KB'; return (value / 1024 ** 2).toFixed(1) + ' MB';}
 function chars(text) {return Array.from(text || '');}
@@ -27,6 +27,7 @@ function renderLibrary() {
 }
 async function refreshEvidenceStatus(project) {
   const status=await api('/api/search/status');if(project!==state.projectId)return;
+  document.dispatchEvent(new CustomEvent('aegis-sources',{detail:status.sources}));
   const selected=$('evidence-document').value;
   $('evidence-document').replaceChildren(node('option','All documents'));
   $('evidence-document').firstChild.value='';
@@ -68,7 +69,7 @@ function renderJob() {
   if (job.pages) $('document-meta').append(node('span', job.pages + ' pages'));
   if (job.status === 'ready') $('document-meta').append(node('span', job.chunks + ' chunks'));
   $('document-meta').append(node('span', job.role + (job.revision ? ' · ' + job.revision : ''))); $('document-meta').append(node('span', labels[job.stage] || job.status, 'state ' + job.status));
-  $('original').href = `/api/documents/${job.id}/original`; $('retry').hidden = job.status !== 'failed'; $('remove').disabled = false;
+  $('original').href = `/api/documents/${job.id}/original`; $('retry').hidden = !['failed','cancelled'].includes(job.status);$('cancel-document').hidden=!['queued','processing'].includes(job.status); $('remove').disabled = false;
   const busy = ['queued', 'processing'].includes(job.status); $('progress').hidden = !busy; $('job-error').hidden = job.status !== 'failed'; $('ready').hidden = job.status !== 'ready' || !state.summary;
   if (busy) { $('progress-label').textContent = labels[job.stage] || 'Processing'; $('progress-count').textContent = job.total ? `${job.done} / ${job.total}` : job.done ? `${job.done} chunks` : job.status === 'queued' ? 'Waiting for a worker' : ''; $('progress-bar').classList.toggle('indeterminate', !job.total); $('progress-bar').style.width = (job.total ? Math.max(2, job.done / job.total * 100) : 10) + '%'; }
   if (job.status === 'failed') $('job-error').textContent = job.error || 'Document processing failed.';
@@ -190,6 +191,7 @@ function renderProjects() {
 }
 async function chooseProject(identity) {
   if($('evidence-drawer').open)$('evidence-drawer').close();$('evidence-text').replaceChildren();
+  document.dispatchEvent(new Event('aegis-project'));
   state.historyOffset=0;state.researchId=null;state.researchRun=null;state.chatRuns={};state.requestStarted=null;state.timerRun=null;state.requestFinished=null;$('research-timing').textContent='';$('research-panel').classList.remove('has-conversation');state.researchBusy=false;state.researchSequence=(state.researchSequence||0)+1;
   $('research-answer').replaceChildren();$('research-trace').replaceChildren();$('research-status').textContent='';
   for(const id of ['research-cancel','research-retry','research-followup','research-report'])$(id).hidden=true;
@@ -249,6 +251,8 @@ async function showEvidence(run,id,quote){
   try{const source=await api('/api/research/'+run.id+'/evidence/'+id);$('evidence-title').textContent=source.id+' · '+source.name;$('evidence-metadata').textContent=source.role+' · '+source.revision+' · '+(source.pages.length?'Page '+source.pages.join(', '):'DOCX')+' · SHA-256 '+source.document_sha256;$('evidence-text').replaceChildren();const at=source.text.indexOf(quote||'');if(quote&&at>=0){$('evidence-text').append(document.createTextNode(source.text.slice(0,at)),node('mark',quote),document.createTextNode(source.text.slice(at+quote.length)));}else $('evidence-text').textContent=source.text;$('evidence-source').href=source.source_url;$('evidence-mappings').textContent=JSON.stringify({excerpt_range:[source.chunk_start,source.chunk_end],mappings:source.mappings,warnings:source.warnings},null,2);$('evidence-drawer').showModal();}catch(error){toast(error.message);}
 }
 function renderResearch(run){
+  const renderKey=run.id+':'+run.updated_at+':'+run.status;
+  if(state.renderedRunKey===renderKey&&$('research-answer').childNodes.length){state.researchRun=run;updateResearchTimer();return;}state.renderedRunKey=renderKey;
   state.researchRun=run;if(state.timerRun!==run.id){state.timerRun=run.id;if(!state.requestStarted){state.timerHistorical=true;const stop=['completed','failed','cancelled'].includes(run.status)?run.updated_at*1000:Date.now();state.requestStarted=performance.now()-Math.max(0,stop-run.created_at*1000);}state.requestFinished=null;}if(['completed','failed','cancelled'].includes(run.status)&&state.requestFinished===null){state.requestFinished=performance.now();}updateResearchTimer();$('research-panel').classList.add('has-conversation');$('research-status').textContent=run.status==='completed'?'':run.status==='running'?({retrieving:'Finding relevant passages…',planning:'Planning the investigation…',evidence_saved:'Preparing source evidence…',generating:'Writing your answer…',checking_support:'Checking the answer against its sources…'}[run.stage]||'Reading your documents…'):run.status==='queued'?'Waiting to start…':run.error||run.status;
   const terminal=['completed','failed','cancelled'].includes(run.status);$('research-cancel').hidden=terminal;$('research-retry').hidden=!['failed','cancelled'].includes(run.status);$('research-followup').hidden=run.status!=='completed';$('research-report').hidden=run.status!=='completed';$('research-report').href='/api/research/'+run.id+'/report';
   state.chatRuns=state.chatRuns||{};state.chatRuns[run.id]=run;
@@ -256,6 +260,7 @@ function renderResearch(run){
   const preceding=[];let previous=state.chatRuns[run.parent_id];while(previous&&preceding.length<16){preceding.unshift(previous);previous=state.chatRuns[previous.parent_id];}
   for(const earlier of preceding){$('research-answer').append(node('p',earlier.question,'chat-question'));for(const claim of earlier.result?.claims||[]){const item=node('article',undefined,'research-claim');item.append(node('p',claim.text));for(const citation of claim.citations){const button=node('button',citation.evidence_id+' · Source');button.onclick=()=>showEvidence(earlier,citation.evidence_id,citation.quote);item.append(button);}$('research-answer').append(item);}}
   $('research-trace').append(node('div',JSON.stringify(run.config,null,2),'research-trace-row'));
+  if(run.config.review_reference){const reference=node('button','Open linked requirement finding');reference.onclick=()=>document.dispatchEvent(new CustomEvent('aegis-open-review',{detail:run.config.review_reference}));$('research-trace').append(reference);}
   for(const step of run.trace)$('research-trace').append(node('div',JSON.stringify(step,null,2),'research-trace-row'));
   $('research-answer').append(node('p',run.question,'chat-question'));
   if(!run.result)return;
@@ -267,7 +272,7 @@ function renderResearch(run){
 }
 async function startResearch(parent=null){
   const project=state.projectId;state.requestStarted=performance.now();state.timerHistorical=false;state.timerRun=null;state.requestFinished=null;$('research-timing').textContent='0.0 s · Starting';$('research-submit').disabled=true;$('research-status').textContent='Queueing local research…';
-  try{const run=await api('/api/research',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:$('research-question').value,mode:$('research-mode').value,retrieval:$('research-retrieval').value,parent_id:parent,document_id:$('research-document').value||null})});if(project!==state.projectId)return;state.historyOffset=0;state.researchId=run.id;state.researchSequence=(state.researchSequence||0)+1;renderResearch(run);$('research-question').value='';await refreshResearch();}catch(error){if(project===state.projectId){state.requestFinished=performance.now();updateResearchTimer();$('research-status').textContent=error.message;}}finally{$('research-submit').disabled=false;}
+  try{const run=await api('/api/research',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:$('research-question').value,mode:$('research-mode').value,retrieval:$('research-retrieval').value,parent_id:parent,document_id:$('research-document').value||null,review_id:state.reviewReference?.id||null,review_row_id:state.reviewReference?.row_id||null})});if(project!==state.projectId)return;state.historyOffset=0;state.researchId=run.id;state.researchSequence=(state.researchSequence||0)+1;renderResearch(run);$('research-question').value='';await refreshResearch();}catch(error){if(project===state.projectId){state.requestFinished=performance.now();updateResearchTimer();$('research-status').textContent=error.message;}}finally{$('research-submit').disabled=false;}
 }
 $('research-form').onsubmit=event=>{event.preventDefault();startResearch(state.researchRun?.status==='completed'?state.researchId:null);};
 $('research-followup').onclick=()=>{if(!$('research-question').reportValidity())return;startResearch(state.researchId);};
@@ -283,8 +288,8 @@ updateProjectControls();
 (async()=>{try{state.session=await api('/api/session');$('account-name').textContent=state.session.user.name;$('upload-limit').textContent='Per file: '+bytes(state.session.max_file_bytes)+' · '+state.session.workers+' document workers';state.projects=(await api('/api/projects')).projects;const saved=localStorage.getItem('aegis.project:'+state.session.user.id);let identity=state.projects.some(p=>p.id===saved) ? saved : state.projects[0]?.id;const params=new URLSearchParams(location.search);let linked=null;if(params.has('document')){try{linked=await api('/api/documents/'+params.get('document'));identity=linked.project_id;}catch(error){toast(error.message);}}await chooseProject(identity);if(linked){await selectDocument(linked.id);if(state.summary&&linked.format==='pdf')await changePage(params.get('page')||1);if(state.summary&&params.has('chunk')){state.method='chunks';state.focusChunk=Number(params.get('chunk'));await loadView();const index=state.chunks.findIndex(chunk=>chunk.index===Number(params.get('chunk')));if(index>=0){state.chunkPosition=index;await loadChunk();}}}setInterval(refresh,1500);}catch(error){toast(error.message);}})();
 
 function showView(view){
-  if(!['chat','documents','search'].includes(view))view='chat';
-  document.body.dataset.view=view;
+  if(!['chat','documents','search','review'].includes(view))view='chat';
+  document.body.dataset.view=view;$('review-panel').hidden=view!=='review';
   $('research-panel').hidden=view!=='chat';
   $('evidence-search').hidden=view!=='search';
   $('document-library').hidden=view!=='documents';$('chat-history').hidden=view!=='chat';
@@ -293,7 +298,7 @@ function showView(view){
   history.replaceState(null,'',location.pathname+location.search+'#'+view);
 }
 document.querySelectorAll('button[data-view]').forEach(button=>button.onclick=()=>showView(button.dataset.view));
-$('new-chat').onclick=()=>{state.researchId=null;state.researchRun=null;state.requestStarted=null;state.requestFinished=null;$('research-timing').textContent='';$('research-panel').classList.remove('has-conversation');$('research-answer').replaceChildren();$('research-question').value='';$('research-status').textContent='';for(const id of ['research-cancel','research-retry','research-followup','research-report'])$(id).hidden=true;showView('chat');$('research-question').focus();};
+$('new-chat').onclick=()=>{state.reviewReference=null;state.researchId=null;state.researchRun=null;state.requestStarted=null;state.requestFinished=null;$('research-timing').textContent='';$('research-panel').classList.remove('has-conversation');$('research-answer').replaceChildren();$('research-question').value='';$('research-status').textContent='';for(const id of ['research-cancel','research-retry','research-followup','research-report'])$(id).hidden=true;showView('chat');$('research-question').focus();};
 $('research-question').addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();$('research-form').requestSubmit();}});
 showView(new URLSearchParams(location.search).has('document')?'documents':location.hash.slice(1)||'chat');
 
@@ -304,3 +309,12 @@ $('sidebar-toggle').onclick=()=>{document.body.classList.toggle('sidebar-collaps
 const mobileLayout=matchMedia('(max-width:760px)');function adaptSidebar(){document.body.classList.toggle('sidebar-collapsed',mobileLayout.matches);$('sidebar-toggle').setAttribute('aria-expanded',String(!mobileLayout.matches));}mobileLayout.addEventListener('change',adaptSidebar);adaptSidebar();
 
 $('chat-history').before(document.querySelector('.saved-research'));
+
+$('cancel-document').onclick=async()=>{try{state.job=await post('/api/documents/'+state.selected+'/cancel');renderJob();}catch(error){toast(error.message);}};
+
+document.addEventListener('aegis-project',()=>{state.reviewReference=null;});
+document.addEventListener('aegis-review-question',event=>{
+  $('new-chat').click();state.reviewReference={id:event.detail.id,row_id:event.detail.row_id};
+  $('research-document').value='';$('research-mode').value='investigate';
+  $('research-question').value=event.detail.question;showView('chat');$('research-question').focus();
+});

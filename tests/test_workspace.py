@@ -203,7 +203,8 @@ def test_pagination_has_no_collection_count_cap(app):
 def test_restart_preserves_ready_jobs_and_recovers_interrupted_jobs(tmp_path):
     root = tmp_path / "storage"
     workspace = Workspace(root, workers=1)
-    job = workspace.upload(io.BytesIO(pdf_bytes()), len(pdf_bytes()), "report.pdf")
+    payload = pdf_bytes()
+    job = workspace.upload(io.BytesIO(payload), len(payload), "report.pdf")
     assert wait(workspace, [job["id"]])[0]["status"] == "ready"
     workspace.close()
     restarted = Workspace(root, workers=1)
@@ -217,7 +218,8 @@ def test_restart_preserves_ready_jobs_and_recovers_interrupted_jobs(tmp_path):
 
 def test_job_timeout_is_explicit(tmp_path):
     workspace = Workspace(tmp_path, workers=1, timeout=0.0001)
-    job = workspace.upload(io.BytesIO(pdf_bytes()), len(pdf_bytes()), "report.pdf")
+    payload = pdf_bytes()
+    job = workspace.upload(io.BytesIO(payload), len(payload), "report.pdf")
     result = wait(workspace, [job["id"]])[0]
     workspace.close()
     assert result["status"] == "failed" and result["error_code"] == "timeout"
@@ -288,3 +290,34 @@ def test_dense_http_filters_and_live_removal(app):
     ] == [2]
     workspace.remove(job["id"])
     assert json.load(request(base, "/api/search?q=force&method=dense"))["results"] == []
+
+
+def test_cancelled_worker_cannot_publish_or_race_with_retry(tmp_path, monkeypatch):
+    workspace = Workspace(tmp_path, workers=1)
+    started, release = threading.Event(), threading.Event()
+    original = workspace._execute
+
+    def blocked(job):
+        started.set()
+        release.wait(5)
+        workspace.update(job["id"], status="ready", stage="complete")
+
+    monkeypatch.setattr(workspace, "_execute", blocked)
+    try:
+        payload = pdf_bytes()
+        job = workspace.upload(io.BytesIO(payload), len(payload), "cancel.pdf")
+        assert started.wait(5)
+        assert workspace.cancel(job["id"])["status"] == "cancelled"
+        with pytest.raises(ValueError, match="stopping"):
+            workspace.retry(job["id"])
+        release.set()
+        deadline = time.monotonic() + 5
+        while job["id"] in workspace.active_jobs and time.monotonic() < deadline:
+            time.sleep(0.01)
+        assert workspace.get(job["id"])["status"] == "cancelled"
+        monkeypatch.setattr(workspace, "_execute", original)
+        workspace.retry(job["id"])
+        assert wait(workspace, [job["id"]])[0]["status"] == "ready"
+    finally:
+        release.set()
+        workspace.close()

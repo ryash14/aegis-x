@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="AEGIS: local technical research, source-grounded answers and engineering requirements revision review. Watch a real synthetic-document walkthrough.">
+  <title>AEGIS · Technical evidence and revision intelligence</title>
+  <style>
+    :root{color-scheme:dark;--bg:#0c1118;--panel:#141d28;--text:#e7eef7;--muted:#a8b6c7;--accent:#90d8c4;--line:#283545}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.65 system-ui,sans-serif}a{color:var(--accent)}main,header,footer{width:min(1120px,calc(100% - 40px));margin:auto}header{display:flex;justify-content:space-between;align-items:center;padding:24px 0;border-bottom:1px solid var(--line)}nav{display:flex;gap:24px;font-size:14px}nav a{text-decoration:none;color:var(--muted)}.brand{font-weight:700;letter-spacing:.14em}.hero{padding:82px 0 62px;max-width:850px}.eyebrow{color:var(--accent);font-size:13px;letter-spacing:.12em;text-transform:uppercase}h1{font-size:clamp(36px,6vw,65px);line-height:1.1;letter-spacing:-.04em;margin:20px 0 24px}h2{font-size:30px;line-height:1.25;letter-spacing:-.02em}h3{font-size:18px;line-height:1.4}.lead{font-size:20px;color:var(--muted);max-width:760px}.tag{display:inline-block;border:1px solid var(--line);border-radius:30px;padding:6px 14px;font-size:13px;color:var(--muted);margin:0 6px 8px 0}.button{display:inline-block;background:var(--accent);color:#102119;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:600;margin-top:16px}.section{padding:48px 0;border-top:1px solid var(--line)}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}.card{background:var(--panel);padding:24px;border:1px solid var(--line);border-radius:12px}.card p,.muted{color:var(--muted)}.number{color:var(--accent);font-size:13px;letter-spacing:.1em}.architecture{display:flex;flex-wrap:wrap;gap:12px;margin:24px 0}.architecture span{border:1px solid var(--line);padding:14px 18px;border-radius:8px;background:var(--panel)}video{width:100%;border:1px solid var(--line);border-radius:12px;background:#090d13}ol{padding-left:24px}li{margin-bottom:12px}.resume{white-space:pre-line;font-size:16px;border-left:3px solid var(--accent);padding:12px 24px;background:var(--panel)}footer{padding:32px 0 48px;color:var(--muted);font-size:13px}strong{color:var(--text)}@media(max-width:700px){.grid{grid-template-columns:1fr}.hero{padding:48px 0}nav{gap:12px;font-size:12px}.section{padding:32px 0}.lead{font-size:18px}}
+  </style>
+</head>
+<body>
+<header><a class="brand" href="#" aria-label="AEGIS home">AEGIS</a><nav aria-label="Sections"><a href="#demo">Walkthrough</a><a href="#architecture">Architecture</a><a href="#validation">Validation</a></nav></header>
+<main>
+  <section class="hero">
+    <div class="eyebrow">Engineering evidence · Local inference</div>
+    <h1>Understand the evidence.<br>Review what changed.</h1>
+    <p class="lead">AEGIS connects cited document research with requirements revision review. Engineers can inspect source passages, compare operating limits and preserve the reasoning behind a human decision.</p>
+    <div><span class="tag">Private accounts</span><span class="tag">PDF + DOCX</span><span class="tag">Hybrid retrieval</span><span class="tag">Local Qwen3</span></div>
+    <a class="button" href="#demo">Watch the working application</a>
+    <p class="muted">This is a public demonstration of a locally running private application. The walkthrough uses invented controller specifications.</p>
+  </section>
+  <section class="section">
+    <div class="eyebrow">The problem</div><h2>A citation is the beginning of a review.</h2>
+    <p class="lead">Technical documents evolve. Finding a relevant paragraph does not establish which requirement changed, whether two quantities mean the same thing, or who accepted a finding. AEGIS joins those steps in one inspectable workflow.</p>
+    <div class="grid">
+      <article class="card"><div class="number">01 / RESEARCH</div><h3>Answers with inspectable evidence</h3><p>BM25 and local semantic retrieval feed bounded investigations. Accepted claims retain source identities and exact quotations; unsupported questions can return insufficient evidence.</p></article>
+      <article class="card"><div class="number">02 / COMPARE</div><h3>Requirements across revisions</h3><p>Enumerate explicit requirements, match stable IDs, show additions and removals, and compare supported units and limits with conservative context checks.</p></article>
+      <article class="card"><div class="number">03 / REVIEW</div><h3>A durable human decision</h3><p>Inspect both quotations, accept, reject or request follow-up, then export the findings and decision history. Ambiguous identity and unsupported expressions remain visible for review.</p></article>
+    </div>
+  </section>
+  <section id="demo" class="section">
+    <div class="eyebrow">Recorded application · Synthetic documents</div><h2>From two specifications to a reviewed change.</h2>
+    <video controls playsinline preload="metadata" poster="preview.png" aria-label="Recorded AEGIS application walkthrough"><source src="demo.mp4" type="video/mp4"><track default kind="captions" src="captions.vtt" srclang="en" label="Walkthrough explanation">Your browser cannot play this recording. <a href="demo.mp4">Download the walkthrough.</a></video>
+    <ol>
+      <li><strong>Upload revisions A and B.</strong> The invented controller's maximum operating temperature changes from 85°C to 80°C.</li>
+      <li><strong>Open Revision review.</strong> The stable requirement ID matches both quotations. With unchanged subject, modality and conditions, the lower maximum is a tighter limit.</li>
+      <li><strong>Record a decision.</strong> Save a review note and export the matrix. The recorded decision is separate from a generated answer.</li>
+      <li><strong>Investigate and inspect citations.</strong> The actual pinned local model compares the revisions. Open the exact quotation, source hash and ranges; follow-ups retrieve evidence again.</li>
+    </ol>
+    <p class="muted">The recording includes real generation waits and browser checks. It has explanatory captions rather than an audio narration. Test accounts exist only in the temporary demonstration workspace.</p>
+  </section>
+  <section id="architecture" class="section">
+    <div class="eyebrow">One host · Bounded workers · Shared provenance</div><h2>A modular monolith that fits the hardware.</h2>
+    <div class="architecture" aria-label="Architecture flow"><span>Browser + private sessions</span><span>FastAPI + SQLite</span><span>Isolated parsing + OCR</span><span>Source-mapped chunks</span><span>BM25 + BGE vectors</span><span>Local Qwen3 8B</span><span>Quote checks + review matrix</span></div>
+    <p class="muted">One quantized inference model runs on an 8 GiB GPU, with CPU embeddings and bounded queues. Code owns authorization, numerical comparisons and quotation validation. The model proposes answers; a separate support review remains fallible. Source hashes and pipeline versions identify saved results.</p>
+    <p class="muted">The native Linux deployment uses separate app and inference service accounts behind a TLS proxy, with a private model listener, readiness checks and offline verified backup/restore. SQLite and exact vector search target a single instance.</p>
+  </section>
+  <section id="validation" class="section">
+    <div class="eyebrow">Measured checks · Explicit limits</div><h2>Evidence for the implementation.</h2>
+    <div class="grid">
+      <article class="card"><h3>Real browser workflows</h3><p>Private login, PDF/DOCX and OCR, two-account isolation, saved research, exact source inspection, unsupported-question abstention, cancellation and review/export passed local Chrome checks.</p></article>
+      <article class="card"><h3>Recovery over HTTPS</h3><p>A real local Caddy proxy verified secure login cookies, restart persistence and backup recovery. Restoring revokes old sessions. Public DNS and certificate issuance require a hosting target.</p></article>
+      <article class="card"><h3>Controlled retrieval study</h3><p>On eight synthetic English paraphrases, dense and hybrid retrieval both reached recall@3 of 1.0; dense ranked first more often. This is a development smoke set, not a held-out benchmark or proof of general superiority.</p></article>
+    </div>
+    <p class="muted"><strong>Boundaries:</strong> explicit English requirements and supported single-bound quantities; compound formulas, implicit requirements and ambiguous matches need manual review. Bounded retrieval is not exhaustive document understanding. Reference validity is not proof of semantic correctness. This project has no defence certification or claimed organizational deployment.</p>
+  </section>
+  <section class="section">
+    <div class="eyebrow">Resume description</div><h2>Three concrete lines.</h2>
+    <p class="resume">Built AEGIS, a private technical research application with hybrid retrieval, local LLM investigations and source-validated citations.
+Implemented requirements revision comparison with supported unit checks, coverage reporting and persistent human review history.
+Validated account isolation and real-model browser workflows; prepared TLS deployment with readiness monitoring and verified backup recovery.</p>
+    <p class="muted">Application source is maintained in a private repository. This public showcase contains only the standalone demo page and synthetic-document recording.</p>
+  </section>
+</main>
+<footer>AEGIS · Implementation walkthrough, October 2026 · Local application demonstrated; no hosted private workspace is claimed.</footer>
+</body>
+</html>

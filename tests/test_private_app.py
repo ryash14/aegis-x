@@ -437,7 +437,8 @@ def test_interrupted_delete_and_unmapped_upload_recovered(tmp_path):
         job = client.upload(pdf_bytes())[1]
         ready(client, job["id"])
         app.state.store.begin_delete(client.request("/api/session")[1]["user"]["id"], project["id"])
-        orphan = app.state.workspace.upload(io.BytesIO(pdf_bytes()), len(pdf_bytes()), "orphan.pdf")
+        payload = pdf_bytes()
+        orphan = app.state.workspace.upload(io.BytesIO(payload), len(payload), "orphan.pdf")
     with running(root) as (app, base):
         client.base = base
         assert client.request("/api/projects")[1]["projects"] == []
@@ -450,7 +451,7 @@ def test_schema_and_secure_cookie_configuration(tmp_path):
     store = Store(root)
     store.add_user("alice@example.test", "Alice", PASSWORD)
     with store.connection() as db:
-        assert db.execute("PRAGMA user_version").fetchone()[0] == 2
+        assert db.execute("PRAGMA user_version").fetchone()[0] == 3
         assert db.execute("SELECT password_hash FROM users").fetchone()[0].startswith("$argon2id$")
     with running(root, secure_cookies=True) as (_, base):
         client = Client(base)
@@ -466,7 +467,7 @@ def test_schema_and_secure_cookie_configuration(tmp_path):
         assert status == 200 and "__Host-aegis_session" in headers.get_all("Set-Cookie")[0]
         assert "Secure" in headers.get_all("Set-Cookie")[0]
     with sqlite3.connect(store.path) as db:
-        db.execute("PRAGMA user_version=3")
+        db.execute("PRAGMA user_version=4")
     with pytest.raises(RuntimeError, match="newer"):
         Store(root)
     with pytest.raises(ValueError):

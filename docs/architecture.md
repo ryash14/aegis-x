@@ -146,7 +146,7 @@ follow-up questions, model-unavailable states and reusable evidence reports.
 passage, see unresolved evidence gaps, and reopen the saved result. Reviewed cases
 cover unsupported questions, invalid citations and document prompt injection.
 
-### Phase 4 — Requirements intelligence and complete product experience
+### Phase 4 — Requirements intelligence and complete product experience (implemented)
 
 Deliver validated requirement inventories, explicit IDs and source quotations,
 revision matching, added/removed/changed requirements, supported unit conversions,
@@ -198,7 +198,8 @@ release. They can follow demonstrated user needs and evaluated capability gains.
 
 Same-day delivery remains a target. These are implementation phases with acceptance
 gates, not a promise that feature count or a deadline guarantees correctness.
-Environment readiness is complete; the five product phases are not yet complete.
+Core implementation is complete. Phase 5 local release checks are implemented;
+external deployment and publication depend on a provisioned hosting target.
 
 ## Resume bullets after implementation and evaluation
 
@@ -426,3 +427,58 @@ with exact reference resolution and a separate fallible support review. Generic
 overviews use opening passages. This is not exhaustive document understanding;
 Phase 4 requirements/revision intelligence and Phase 5 evaluation/release remain
 outstanding. A desktop shell can later reuse the frontend and local API.
+
+
+### Phase 4 completion and Phase 5 release — 8 October 2026
+
+The source-preserving requirements inventory, baseline/candidate matrix, conservative
+unit/limit comparison, ambiguity handling, saved decisions, hash-linked history,
+cache reuse, JSON/HTML exports and finding-linked research composer are implemented.
+An explicit requirement-ID change from 85°C to 80°C is classified as a tighter
+maximum only when subject, modality and condition remain unchanged. Unsupported
+compound units/formulas/ranges and implicit requirements remain manual; the current
+implementation does not claim general formal specification verification. Matching
+without IDs uses conservative text similarity rather than a second model pipeline.
+
+Phase 4 also supplies parser cancellation/retry protection, schema-3 migration,
+checksummed offline backup, fail-closed restore with session revocation, readiness
+and authenticated runtime diagnostics. Exact quotes/source IDs remain deterministic
+checks; semantic support review and generated interpretations remain fallible.
+
+The original user question, “Long term congestion ingestion,” now selects the
+Infini-attention PDF's “Long-term context injection” subsection rather than generic
+RAG ingestion. Compound topic alignment combines heading/short-label matching with
+existing hybrid ranks and records the interpretation in the research trace. The
+model receives that label as untrusted evidence context. A fresh live run returned
+four source-validated claims about gating, retrieved memory and local attention in
+11.85 seconds on this workstation. This is one regression measurement, not a
+held-out accuracy benchmark or service latency guarantee. Its private evidence
+report stays outside version control.
+
+Phase 5 local browser checks passed for private ingestion/OCR/search, two-account
+isolation, real pinned-model investigation, abstention, follow-ups, cancellation,
+source quotations, revision decisions/export and desktop/mobile overflow. The TLS
+deployment drill passed secure login, application restart and verified backup
+recovery with restored sessions revoked. It used a local test CA; public
+certificate issuance and production-host provisioning have not been tested.
+
+See [deployment and recovery](deployment.md). The native systemd/Caddy configuration
+is prepared and Caddy configuration validation passed. An external deployment
+requires an actual private host/domain and host-level checks. The requested full
+visual redesign remains a separate iteration; functional navigation is separated
+into Chat, Documents, Search evidence and Revision review. No security certification,
+organizational adoption, guaranteed resume outcome or general superiority over RAG
+is claimed by these smoke tests.
+
+
+Final release verification: **200 automated tests passed**, real-model research and
+private browser suites passed, TLS recovery drill passed, lint/format checks and
+wheel/source packaging passed. The installed dependency audit reported no known
+vulnerabilities in the audited packages; the local application itself is not a
+PyPI package and was checked through its own tests/review. This is not a penetration
+test or a claim that every possible attack is prevented. A release backup restored
+the current private project and both documents in an isolated drill.
+
+A separate standalone resume showcase lives in `showcase/`, with a real recorded
+synthetic-document workflow, explanatory captions, architecture and measured limits.
+It contains no private workspace or application account credentials.

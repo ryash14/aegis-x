@@ -54,6 +54,10 @@ def main():
         "output_tokens": value.get("eval_count"),
         "model": task["model"],
         "digest": task["digest"],
+        "timing": {
+            key: round(value.get(key, 0) / 1e9, 3)
+            for key in ("total_duration", "load_duration", "prompt_eval_duration", "eval_duration")
+        },
     }
     print(json.dumps(result), flush=True)
 

@@ -47,6 +47,7 @@ class Workspace:
         self.closed = threading.Event()
         self.control = threading.RLock()
         self.processes = {}
+        self.active_jobs = set()
         self.wake = threading.Event()
         self.preview_slots = threading.BoundedSemaphore(2)
         self.db = self.root / "workspace.sqlite3"
@@ -127,7 +128,7 @@ class Workspace:
             database.execute(
                 "UPDATE documents SET "
                 + ",".join(f"{key}=?" for key in values)
-                + " WHERE id=? AND status NOT IN ('removed','deleting')",
+                + " WHERE id=? AND status NOT IN ('removed','deleting','cancelled')",
                 [*values.values(), identity],
             )
 
@@ -242,12 +243,21 @@ class Workspace:
         while not self.closed.is_set():
             pending = {future for future in pending if not future.done()}
             while len(pending) < self.workers and not self.closed.is_set():
-                job = self._claim()
-                if not job:
-                    break
-                pending.add(self.pool.submit(self._execute, job))
+                with self.control:
+                    job = self._claim()
+                    if not job:
+                        break
+                    self.active_jobs.add(job["id"])
+                pending.add(self.pool.submit(self._execute_tracked, job))
             self.wake.wait(0.1)
             self.wake.clear()
+
+    def _execute_tracked(self, job):
+        try:
+            self._execute(job)
+        finally:
+            with self.control:
+                self.active_jobs.discard(job["id"])
 
     @staticmethod
     def kill(process):
@@ -260,7 +270,8 @@ class Workspace:
     @contextmanager
     def worker_process(self, identity, temporary):
         with self.control:
-            self.get(identity)
+            if self.get(identity)["status"] != "processing":
+                raise ValueError("Document job is no longer active")
             process = subprocess.Popen(
                 [sys.executable, "-m", "aegis.workspace.worker"],
                 stdin=subprocess.PIPE,
@@ -406,22 +417,38 @@ class Workspace:
             raise ValueError("Document is not ready")
         return json.loads((self.root / identity / "result" / name).read_text())
 
-    def retry(self, identity):
-        job = self.get(identity)
-        if job["status"] != "failed":
-            raise ValueError("Only failed jobs can be retried")
-        self.update(
-            identity,
-            status="queued",
-            stage="queued",
-            done=0,
-            total=0,
-            error=None,
-            error_code=None,
-            signature=self.signature,
-        )
-        self.wake.set()
+    def cancel(self, identity):
+        with self.control:
+            job = self.get(identity)
+            if job["status"] not in {"queued", "processing"}:
+                return job
+            with self.connection() as database:
+                database.execute(
+                    "UPDATE documents SET status='cancelled',stage='cancelled',"
+                    "error_code='cancelled',error='Cancelled by user' "
+                    "WHERE id=? AND status IN ('queued','processing')",
+                    (identity,),
+                )
+            process = self.processes.get(identity)
+            if process is not None and process.poll() is None:
+                self.kill(process)
         return self.get(identity)
+
+    def retry(self, identity):
+        with self.control:
+            job = self.get(identity)
+            if job["status"] not in {"failed", "cancelled"}:
+                raise ValueError("Only failed or cancelled jobs can be retried")
+            if identity in self.active_jobs:
+                raise ValueError("Previous worker is stopping; retry shortly")
+            with self.connection() as database:
+                database.execute(
+                    "UPDATE documents SET status='queued',stage='queued',done=0,total=0,"
+                    "error=NULL,error_code=NULL,signature=? WHERE id=?",
+                    (self.signature, identity),
+                )
+            self.wake.set()
+            return self.get(identity)
 
     def remove(self, identity):
         job = self.get(identity)

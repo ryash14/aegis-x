@@ -1,7 +1,8 @@
 # Private application operations
 
-Phase 1 runs the authenticated app locally. All document processing and browser
-assets stay on the machine; generation and hybrid research are later phases.
+The authenticated app runs locally or on a private Linux host. Processing,
+embeddings and generation use local runtimes. See [deployment](deployment.md) for
+TLS, systemd, readiness and backup/restore.
 
 ```bash
 uv sync --locked
@@ -37,7 +38,7 @@ uv sync --locked --extra dense
 uv run --locked --extra dense python scripts/fetch_embedding_model.py
 ```
 
-Restart the app afterward. Search appears above the document inspector. Ready
+Restart the app afterward. Search has its own **Search evidence** view. Ready
 files index automatically; newly uploaded files may still be embedding. Choose
 Hybrid, Keyword or Semantic search, filter by document/revision/role/section/kind/
 format and open **Inspect exact source**. Surrounding evidence is limited to adjacent
@@ -60,7 +61,7 @@ uv run --locked --extra dense aegis-app serve
 ```
 
 The model stays private at `127.0.0.1:11435`; it is not a browser-facing endpoint.
-Use **Evidence-grounded research** above search. Choose a cited answer or multi-step
+Use **Chat** for evidence-grounded research. Choose a cited answer or multi-step
 investigation. Ready documents must finish indexing first. Every accepted claim
 has a source citation: click it to view the saved excerpt, highlighted exact quote,
 source hash, ranges and warnings, then open the original chunk. A model support
@@ -216,3 +217,33 @@ uploaded documents in your normal library. Reports and screenshots go under
 `data/evaluation/`. Versioned measurement snapshots are
 [phase1-evaluation.json](phase1-evaluation.json) and
 [phase1-browser-check.json](phase1-browser-check.json).
+
+
+## Revision review
+
+Open **Revision review**, choose two ready documents as baseline and candidate, and
+start a comparison. English shall/must/should statements are enumerated from up to
+2,000 extracted chunks per document, capped at 1,000 requirements. Stable IDs match
+first; unlabelled similar wording is only a suggested match. Duplicate IDs are
+ambiguous. Source quotations retain offsets, chunk links and document hashes.
+
+Supported single-bound quantities are converted and compared only with unchanged
+subject, modality and conditions. Different conditions, unsupported units, compound
+expressions and implicit/table-only requirements need manual review. Inventory
+coverage describes extracted material scanned, not exhaustive specification review.
+
+Inspect baseline and candidate quotations side by side, record accepted/rejected/
+needs-followup with a reason, and export JSON or printable HTML. Decisions append to
+a hash-linked history; this is not an externally anchored tamper-proof audit.
+**Investigate this change** opens a cited research question tied to the review ID,
+finding ID and result hash. Review findings remain human proposals.
+
+Completed identical comparisons reuse cached results against source hashes, parser
+signatures, revision metadata and comparison version. Cancel/retry and saved review
+history are available. Source deletion removes derived reviews and their decisions.
+Processing uploads can be cancelled and retried after the prior worker stops.
+
+Authenticated routes: `GET/POST /api/reviews`, `GET /api/reviews/ID`,
+`POST /api/reviews/ID/cancel`, `/retry`, `/decisions`, and
+`GET /api/reviews/ID/report?format=json|html`. Project ownership and CSRF rules
+apply to reviews and decisions exactly as they do to document/research mutations.

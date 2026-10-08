@@ -8,6 +8,7 @@ import math
 import os
 import tempfile
 import threading
+import urllib.request
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -15,15 +16,17 @@ from urllib.parse import unquote, urlsplit
 
 import uvicorn
 from fastapi import Depends, FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 from starlette.concurrency import run_in_threadpool
 
 from aegis.chunking import ChunkConfig
 from aegis.workspace.server import DOCX_MIME
 from aegis.workspace.service import Workspace
 
-from .investigation import Investigations, LocalModel
+from .investigation import MODEL_DIGEST, Investigations, LocalModel
+from .model_worker import NoRedirect
 from .research import Research
+from .reviews import Reviews, printable
 from .store import Store
 
 STATIC = Path(__file__).parent / "static"
@@ -157,8 +160,11 @@ def create_app(settings=None):
                 LocalModel(settings.model_url),
                 timeout=settings.research_timeout,
             )
+            app.state.reviews = Reviews(store, workspace, app.state.mutations)
             yield
         finally:
+            if hasattr(app.state, "reviews"):
+                await run_in_threadpool(app.state.reviews.close)
             if hasattr(app.state, "investigations"):
                 await run_in_threadpool(app.state.investigations.close)
             if hasattr(app.state, "research"):
@@ -270,6 +276,57 @@ def create_app(settings=None):
     @app.get("/health/live")
     def live():
         return {"status": "ok"}
+
+    def readiness():
+        checks = {
+            "storage": False,
+            "retrieval": False,
+            "research_worker": False,
+            "review_worker": False,
+            "model": False,
+        }
+        try:
+            with app.state.store.connection() as db:
+                checks["storage"] = db.execute("SELECT 1").fetchone()[0] == 1
+            checks["retrieval"] = (
+                app.state.research.thread.is_alive()
+                and app.state.research.dense is not None
+                and not app.state.research.index_error
+            )
+            checks["research_worker"] = app.state.investigations.thread.is_alive()
+            checks["review_worker"] = app.state.reviews.thread.is_alive()
+            opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
+            with opener.open(settings.model_url + "/api/tags", timeout=2) as response:
+                payload = response.read(262145)
+                if len(payload) <= 262144:
+                    models = json.loads(payload).get("models", [])
+                    checks["model"] = any(
+                        model.get("name") == "qwen3:8b" and model.get("digest") == MODEL_DIGEST
+                        for model in models
+                    )
+        except (OSError, ValueError, AttributeError):
+            pass
+        return {"status": "ready" if all(checks.values()) else "not_ready", "checks": checks}
+
+    @app.get("/health/ready")
+    def ready():
+        report = readiness()
+        return JSONResponse(report, status_code=200 if report["status"] == "ready" else 503)
+
+    @app.get("/api/system")
+    def system_status(user=user_dependency):
+        report = readiness()
+        report.update(
+            model="qwen3:8b",
+            model_digest=MODEL_DIGEST,
+            retrieval_model=app.state.research.dense.encoder.key
+            if app.state.research.dense
+            else None,
+            research_timeout_seconds=settings.research_timeout,
+            per_file_limit_bytes=settings.max_file_bytes,
+            document_workers=settings.workers,
+        )
+        return report
 
     @app.get("/api/session")
     def session(request: Request, user=user_dependency):
@@ -498,6 +555,13 @@ def create_app(settings=None):
     def get_document(identity: str, request: Request, user=user_dependency):
         return document(request, user, identity)
 
+    @app.post("/api/documents/{identity}/cancel")
+    def cancel_document(identity: str, request: Request, user=user_dependency):
+        with app.state.mutations:
+            document(request, user, identity)
+            app.state.workspace.cancel(identity)
+            return document(request, user, identity)
+
     @app.post("/api/documents/{identity}/retry")
     def retry(identity: str, request: Request, user=user_dependency):
         with app.state.mutations:
@@ -604,12 +668,83 @@ def create_app(settings=None):
                 body.get("parent_id"),
                 body.get("retrieval", "hybrid"),
                 body.get("document_id"),
+                body.get("review_id"),
+                body.get("review_row_id"),
             )
         except BlockingIOError as exc:
             raise HTTPException(429, str(exc)) from exc
 
     def owned_run(user, identity):
         return app.state.store.run(user["id"], identity)
+
+    @app.get("/api/reviews")
+    def list_reviews(request: Request, user=user_dependency):
+        return {"reviews": app.state.reviews.list(user["id"], project_id(request, user))}
+
+    @app.post("/api/reviews", status_code=202)
+    async def create_review(request: Request, user=user_dependency):
+        body = await json_body(request)
+        try:
+            return await run_in_threadpool(
+                app.state.reviews.create,
+                user["id"],
+                project_id(request, user),
+                body.get("baseline_id"),
+                body.get("candidate_id"),
+            )
+        except BlockingIOError as error:
+            raise HTTPException(429, str(error)) from error
+
+    @app.get("/api/reviews/{identity}")
+    def read_review(identity: str, user=user_dependency):
+        return app.state.reviews.get(user["id"], identity)
+
+    @app.post("/api/reviews/{identity}/cancel")
+    def cancel_review(identity: str, user=user_dependency):
+        return app.state.reviews.cancel(user["id"], identity)
+
+    @app.post("/api/reviews/{identity}/retry", status_code=202)
+    def retry_review(identity: str, user=user_dependency):
+        old = app.state.reviews.get(user["id"], identity)
+        if old["status"] not in {"failed", "cancelled"}:
+            raise ValueError("Only failed or cancelled reviews can be retried")
+        try:
+            return app.state.reviews.create(
+                user["id"], old["project_id"], old["baseline_id"], old["candidate_id"], reuse=False
+            )
+        except BlockingIOError as error:
+            raise HTTPException(429, str(error)) from error
+
+    @app.post("/api/reviews/{identity}/decisions")
+    async def decide_review(identity: str, request: Request, user=user_dependency):
+        body = await json_body(request)
+        return await run_in_threadpool(
+            app.state.reviews.decide,
+            user["id"],
+            identity,
+            body.get("row_id"),
+            body.get("decision"),
+            body.get("note", ""),
+        )
+
+    @app.get("/api/reviews/{identity}/report")
+    def review_report(identity: str, format: str = "json", user=user_dependency):
+        review = app.state.reviews.get(user["id"], identity)
+        if review["status"] != "completed":
+            raise ValueError("The review has not completed")
+        if format == "html":
+            return HTMLResponse(
+                printable(review),
+                headers={
+                    "Content-Disposition": f'attachment; filename="aegis-review-{identity}.html"'
+                },
+            )
+        if format != "json":
+            raise ValueError("Use json or html report format")
+        return JSONResponse(
+            review,
+            headers={"Content-Disposition": f'attachment; filename="aegis-review-{identity}.json"'},
+        )
 
     @app.get("/api/research/{identity}")
     def read_research(identity: str, user=user_dependency):
@@ -633,6 +768,8 @@ def create_app(settings=None):
                 existing["parent_id"],
                 existing["config"]["retrieval"],
                 existing["config"].get("document_id"),
+                existing["config"].get("review_reference", {}).get("id"),
+                existing["config"].get("review_reference", {}).get("row_id"),
             )
         except BlockingIOError as exc:
             raise HTTPException(429, str(exc)) from exc
@@ -718,7 +855,7 @@ def create_app(settings=None):
 
     @app.get("/{asset}")
     def asset(asset: str):
-        if asset in {"app.js", "login.js", "private.css"}:
+        if asset in {"app.js", "login.js", "private.css", "reviews.js"}:
             return FileResponse(STATIC / asset)
         if asset == "style.css":
             return FileResponse(WORKSPACE_STATIC / asset)
@@ -747,6 +884,10 @@ def main():
     reset.add_argument("email")
     disable = commands.add_parser("user-disable", help="Disable a user and revoke their sessions")
     disable.add_argument("email")
+    backup_command = commands.add_parser("backup", help="Back up stopped application storage")
+    backup_command.add_argument("archive", type=Path)
+    restore_command = commands.add_parser("restore", help="Restore a backup into new storage")
+    restore_command.add_argument("archive", type=Path)
     serve = commands.add_parser("serve", help="Start the private application")
     serve.add_argument("--host", default="127.0.0.1")
     serve.add_argument("--port", type=int, default=8787)
@@ -763,6 +904,15 @@ def main():
             else:
                 store.set_password(args.email, password)
                 print("Password changed and existing sessions revoked.")
+        elif args.command in {"backup", "restore"}:
+            from .operations import backup, restore
+
+            result = (
+                backup(args.storage, args.archive)
+                if args.command == "backup"
+                else restore(args.archive, args.storage)
+            )
+            print(json.dumps(result))
         elif args.command == "user-disable":
             Store(args.storage).disable_user(args.email)
             print("Account disabled and sessions revoked.")

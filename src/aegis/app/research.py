@@ -5,6 +5,7 @@ import logging
 import re
 import threading
 import time
+from difflib import SequenceMatcher
 
 from aegis.retrieval.dense import DenseIndex
 from aegis.retrieval.embeddings import LocalEncoder
@@ -25,6 +26,49 @@ def lexical_query(query):
     terms = re.findall(r"[^\W_]+", query, flags=re.UNICODE)
     meaningful = [term for term in terms if term.lower() not in STOPWORDS]
     return " ".join(meaningful) if meaningful else query
+
+
+def topic_match(query, chunk):
+    """Match compound topics to short source labels, tolerating near-spelling mistakes."""
+    ignored = {"explain", "describe", "please", "tell", "about", "detail", "details", "give"}
+    terms = [
+        word.casefold() for word in lexical_query(query).split() if word.casefold() not in ignored
+    ]
+    if not 3 <= len(terms) <= 10:
+        return 0.0, ""
+    labels = [heading["text"] for heading in chunk.get("headings", [])]
+    for line in chunk["text"].splitlines():
+        label = re.split(r"[.:]", line.strip(), maxsplit=1)[0]
+        if 3 <= len(label.split()) <= 12 and len(label) <= 110:
+            labels.append(label)
+    best = (0.0, "")
+    for label in labels:
+        words = lexical_query(label).casefold().split()
+        if not words:
+            continue
+        used, score = set(), 0.0
+        for term in terms:
+            choices = []
+            for i, word in enumerate(words):
+                if i in used:
+                    continue
+                similarity = 1.0 if word == term else 0.0
+                if len(term) >= 5 and len(word) >= 5 and term[0] == word[0]:
+                    ratio = SequenceMatcher(None, term, word).ratio()
+                    if ratio >= 0.76:
+                        similarity = max(similarity, ratio)
+                choices.append((similarity, i))
+            if choices:
+                similarity, index = max(choices)
+                if similarity:
+                    score += similarity
+                    used.add(index)
+        coverage = score / len(terms)
+        # Specific short labels win over a long sentence containing scattered words.
+        coverage *= min(1.0, (len(terms) + 2) / len(words))
+        if coverage > best[0]:
+            best = coverage, label
+    return best
 
 
 def fuse(sparse, dense, limit=10):
@@ -171,9 +215,10 @@ class Research:
                     chunk = self.workspace.read_json(identity, f"chunk-{number}.json")
                     pages = sorted(
                         {
-                            mapping["page"]
+                            source["page"]
                             for mapping in chunk["mappings"]
-                            if mapping.get("page") is not None
+                            for source in mapping["sources"]
+                            if source.get("page") is not None
                         }
                     )
                     hits.append(
@@ -219,6 +264,13 @@ class Research:
             sparse = self.sparse.search(lexical_query(query), **options) if mode != "dense" else []
             dense = self.dense.search(query, **options) if mode != "sparse" else []
             ranked = fuse(sparse, dense, 100) if mode == "hybrid" else sparse or dense
+            for hit in ranked:
+                alignment, topic = topic_match(query, hit["chunk"])
+                hit["topic_alignment"], hit["matched_topic"] = alignment, topic
+            ranked.sort(
+                key=lambda hit: hit["topic_alignment"] if hit["topic_alignment"] >= 0.68 else 0,
+                reverse=True,
+            )
             hits, seen, used = [], set(), 0
             with self.mutations:
                 live = self.scope(owner, project, **filters)
