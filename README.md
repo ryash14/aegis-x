@@ -72,6 +72,8 @@ Tests and evaluation helpers are retained because they validate application beha
 
 ## Resume demonstration
 
+[Open the published resume demonstration](https://ryash14.github.io/aegis-showcase/).
+
 `showcase/` is a standalone static walkthrough site. It includes a real synthetic-
 document recording, explanation captions, architecture and honest validation limits.
 The private application is separate from this public-facing demo.

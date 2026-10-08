@@ -482,3 +482,11 @@ the current private project and both documents in an isolated drill.
 A separate standalone resume showcase lives in `showcase/`, with a real recorded
 synthetic-document workflow, explanatory captions, architecture and measured limits.
 It contains no private workspace or application account credentials.
+
+
+The standalone demo is published at
+https://ryash14.github.io/aegis-showcase/ in a separate public static repository.
+Live HTTPS checks returned 200 for the page/video/poster/captions; Chrome verified
+video metadata (53.12 seconds), mobile overflow and no JavaScript exceptions.
+The application repository and private document workspace remain separate.
+This completes the resume-site fallback, not remote private-app hosting.
