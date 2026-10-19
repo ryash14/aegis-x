@@ -6,7 +6,23 @@ Engineering review needs more than a plausible answer. It needs the passages beh
 
 [![CI](https://github.com/ryash14/aegis-x/actions/workflows/verify.yml/badge.svg)](https://github.com/ryash14/aegis-x/actions/workflows/verify.yml)
 
-[Quick start](#quick-start) · [How it works](#how-it-works) · [Development](#development) · [Contributing](CONTRIBUTING.md)
+[Preview](#application-preview) · [Quick start](#quick-start) · [Architecture](#architecture-and-request-flow) · [Development](#development) · [Contributing](CONTRIBUTING.md)
+
+## Application preview
+
+![AEGIS requirements revision review](showcase/preview.png)
+
+Revision review comparing two invented controller specifications, with source passages and a human decision form.
+
+[Screenshot notes](docs/screenshots/README.md) · [Watch the walkthrough](showcase/demo.mp4)
+
+## Capabilities
+
+| Workflow | Result |
+|---|---|
+| Research | Inspect source-backed answers across a private document collection. |
+| Revision review | Compare baseline and candidate requirements, quantities and conditions. |
+| Review record | Retain unresolved findings, reviewer decisions and exportable evidence. |
 
 ## Quick start
 
@@ -31,14 +47,14 @@ After signing in, create a project and upload two public or invented specificati
 
 For research, start the local model worker in a second terminal and ask a question confined to the uploaded documents. Scope a query to one document when mixing revisions would make the answer ambiguous. See [workspace operations](docs/workspace.md) for storage and administration, and [deployment](docs/deployment.md) for the Linux service boundary.
 
-## How it works
+## Architecture and request flow
 
 1. Create a private account and project, then upload PDF or DOCX sources.
 2. Inspect extraction warnings and source passages before relying on the index.
 3. Ask a research question, or choose baseline and candidate revisions for comparison.
 4. Review supporting passages, quantity comparisons and unresolved cases. Record decisions and export the review.
 
-### Component boundaries
+### Component model
 
 ```mermaid
 flowchart TB
@@ -59,7 +75,7 @@ flowchart TB
     Decisions --> Store
 ```
 
-### Design decisions
+### Engineering decisions
 
 A modular monolith keeps identity, projects, jobs, evidence and decisions in one application boundary. Bounded workers perform extraction and OCR; sparse and local dense retrieval feed the research workflow. A local model proposes structured answers and semantic comparisons, while application code validates quotations, ranges and supported numerical checks.
 
