@@ -7,19 +7,22 @@
 ```mermaid
 %%{init: {'theme': 'dark'}}%%
 flowchart TD
-    N0["PDF and DOCX sources"]
-    N1["Ingestion and OCR"]
-    N2["Normalized layout and section chunks"]
-    N3["Sparse and dense retrieval"]
-    N4["Local research and evidence validation"]
-    N5["Cited answers or revision comparisons"]
-    N6["Human review and stored decisions"]
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
-    N4 --> N5
-    N5 --> N6
+    UI[Browser: projects and review matrix] --> API[FastAPI: identity and project authorization]
+    API --> DB[SQLite: users, jobs, documents, reviews, decisions]
+    API --> Q[Persistent bounded job queue]
+    Q --> ING[Isolated PDF/DOCX and OCR workers]
+    ING --> SRC[Originals and source-mapped evidence]
+    SRC --> REQ[Requirement inventory with coverage]
+    REQ --> MATCH[Revision matching and numerical checks]
+    MATCH --> FIND[Findings and unresolved cases]
+    SRC --> IDX[BM25 and local BGE vectors]
+    IDX --> RET[Project-scoped rank-fused retrieval]
+    RET --> MODEL[Local model: bounded structured proposals]
+    MODEL --> VALID[Schema, citation and quote validation]
+    VALID --> FIND
+    FIND --> UI
+    UI --> DEC[Human decisions and audit history]
+    DEC --> DB
 ```
 
 ### 🛠️ Production Stack
